@@ -60,8 +60,11 @@ http.createServer(function(req, res) {
     //var html = getMainPage();
     var html = generateWidgetDocs();
     generateWidgetReadme();
+    html += "<br><br>Generated a new README.md file...";
     generateInlinedFile();
+    html += "<br><br>Generated a new auto-generated-widget.html file...";
     pushToGithub();
+    html += "<br><br>Pushed updates to Github...";
 
     res.end(html);
 
