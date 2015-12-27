@@ -163,7 +163,7 @@ $widget-cploadjs
   md = md.replace(/\$widget-desc/g, widget.desc);
   md = md.replace(/\$widget-cpurl/g, github.rawurl);
   md = md.replace(/\$widget-editurl/g, editUrl);
-  md = md.replace(/\$widget-giturlb/g, github.url);
+  md = md.replace(/\$widget-giturl/g, github.url);
   md = md.replace(/\$widget-testurl/g, widgetUrl);
   
   var cpload = generateCpLoadStmt();
