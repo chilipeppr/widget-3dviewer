@@ -60,6 +60,7 @@ http.createServer(function(req, res) {
     //var html = getMainPage();
     var html = generateWidgetDocs();
     generateInlinedFile();
+    generateWidgetReadme();
 
     res.end(html);
 
@@ -113,6 +114,65 @@ cpdefine = function(myid, mydeps, callback) {
 requirejs = function() {}
 requirejs.config = function() {};
 cprequire_test = function() {};
+
+var generateWidgetReadme = function() {
+
+  // First we have to eval so stuff is in memory
+  evalWidgetJs();
+  
+  // Spit out Markdown docs
+  var md = `# $widget-id
+$widget-desc
+
+## ChiliPeppr $widget-name
+
+All ChiliPeppr widgets/elements are defined using cpdefine() which is a method
+that mimics require.js. Each defined object must have a unique ID so it does
+not conflict with other ChiliPeppr widgets.
+
+| ID                    | $widget-id |
+| Name                  | $widget-name |
+| Description           | $widget-desc |
+| chilipeppr.load() URL | $widget-cpurl |
+| Edit URL              | $widget-editurl |
+| Github URL            | $widget-giturl |
+| Test URL              | $widget-testurl |
+
+## Example Code for chilipeppr.load() Statement
+
+You can use the code below as a starting point for instantiating this widget inside a workspace or from another widget. The key is that you need to load your widget inlined into a div so the DOM can parse your HTML, CSS, and Javascript. Then you use cprequire() to find your widget's Javascript and get back the instiated instance of it.
+
+\`\`\`javascript
+$widget-cploadjs
+\`\`\`
+
+`
+
+  var widgetUrl = 'http://' +
+    process.env.C9_PROJECT + '-' + process.env.C9_USER +
+    '.c9users.io/widget.html';
+  var editUrl = 'http://ide.c9.io/' +
+    process.env.C9_USER + '/' +
+    process.env.C9_PROJECT;
+  var github = getGithubUrl();
+
+  md = md.replace(/\$widget-id/g, widget.id);
+  md = md.replace(/\$widget-name/g, widget.name);
+  md = md.replace(/\$widget-desc/g, widget.desc);
+  md = md.replace(/\$widget-cpurl/g, github.rawurl);
+  md = md.replace(/\$widget-editurl/g, editUrl);
+  md = md.replace(/\$widget-giturlb/g, github.url);
+  md = md.replace(/\$widget-testurl/g, widgetUrl);
+  
+  var cpload = generateCpLoadStmt();
+  md = md.replace(/\$widget-cploadjs/g, cpload);
+
+
+  // now write out the auto-gen file
+  fs.writeFileSync("README.md", md);
+  console.log("Rewrote README.md");
+  
+}
 
 var generateWidgetDocs = function() {
   
