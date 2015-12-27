@@ -40,6 +40,7 @@ cprequire_test(["inline:com-chilipeppr-widget-template"], function(myWidget) {
 
     console.log("test running of " + myWidget.id);
 
+    $('#com-chilipeppr-widget-template').css('margin', '10px;');
     $('body').prepend('<div id="testDivForFlashMessageWidget"></div>');
 
     chilipeppr.load(
@@ -62,30 +63,51 @@ cprequire_test(["inline:com-chilipeppr-widget-template"], function(myWidget) {
 // This is the main definition of your widget. Give it a unique name.
 cpdefine("inline:com-chilipeppr-widget-template", ["chilipeppr_ready", /* other dependencies here */ ], function() {
     return {
+        /**
+         * The ID of the widget. You must define this and make it unique.
+         */
         id: "com-chilipeppr-widget-template", // Make the id the same as the cpdefine id
-        url: "(auto fill by runme.js)", // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
+        url: "(auto fill by runme.js)",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
         fiddleurl: "(auto fill by runme.js)", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
-        name: "Widget / ChiliPeppr Template", // The descriptive name of your widget.
-        desc: "This example widget lets you do something. Please change this description", // A description of what your widget does
+        githuburl: "(auto fill by runme.js)", // The backing github repo
+        testurl: "(auto fill by runme.js)",   // The standalone working widget so can view it working by itself
+        name: "Widget / Template", // The descriptive name of your widget.
+        desc: "This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget.", // A description of what your widget does
         /**
          * Define pubsub signals below. These are basically ChiliPeppr's event system.
          * ChiliPeppr uses amplify.js's pubsub system so please refer to docs at
          * http://amplifyjs.com/api/pubsub/
          */
+        /**
+         * Define the publish signals that this widget/element owns or defines so that
+         * other widgets know how to subscribe to them and what they do.
+         */
         publish: {
             // Define a key:value pair here as strings to document what signals you publish.
             '/onExampleGenerate': 'Example: Publish this signal when we go to generate gcode.'
         },
+        /**
+         * Define the subscribe signals that this widget/element owns or defines so that
+         * other widgets know how to subscribe to them and what they do.
+         */
         subscribe: {
             // Define a key:value pair here as strings to document what signals you subscribe to
             // so other widgets can publish to this widget to have it do something.
             // '/onExampleConsume': 'Example: This widget subscribe to this signal so other widgets can send to us and we'll do something with it.'
         },
+        /**
+         * Document the foreign publish signals, i.e. signals owned by other widgets
+         * or elements, that this widget/element publishes to.
+         */
         foreignPublish: {
             // Define a key:value pair here as strings to document what signals you publish to
             // that are owned by foreign/other widgets.
             // '/jsonSend': 'Example: We send Gcode to the serial port widget to do stuff with the CNC controller.'
         },
+        /**
+         * Document the foreign subscribe signals, i.e. signals owned by other widgets
+         * or elements, that this widget/element subscribes to.
+         */
         foreignSubscribe: {
             // Define a key:value pair here as strings to document what signals you subscribe to
             // that are owned by foreign/other widgets.
@@ -103,9 +125,6 @@ cpdefine("inline:com-chilipeppr-widget-template", ["chilipeppr_ready", /* other 
             this.forkSetup();
 
             console.log("I am done being initted.");
-        },
-        methodWithNoDocs: function(blah) {
-            
         },
         /**
          * Call this method from init to setup all the buttons when this widget
@@ -161,7 +180,7 @@ cpdefine("inline:com-chilipeppr-widget-template", ["chilipeppr_ready", /* other 
             // of the slick .bind(this) technique to correctly set "this"
             // when the callback is called
             $('#' + this.id + ' .btn-helloworld2').click(this.onHelloBtnClick.bind(this));
-            
+
         },
         /**
          * onHelloBtnClick is an example of a button click event callback

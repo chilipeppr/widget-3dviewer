@@ -59,8 +59,9 @@ http.createServer(function(req, res) {
 
     //var html = getMainPage();
     var html = generateWidgetDocs();
-    //generateInlinedFile();
-    //generateWidgetReadme();
+    generateWidgetReadme();
+    generateInlinedFile();
+    pushToGithub();
 
     res.end(html);
 
@@ -104,6 +105,26 @@ var evalWidgetJs = function() {
   // figure out all the info from it to generate docs and sample
   // code to make your life easy
   widgetSrc = fs.readFileSync('widget.js')+'';
+  
+  // fill in some auto fill stuff
+  var widgetUrl = 'http://' +
+    process.env.C9_PROJECT + '-' + process.env.C9_USER +
+    '.c9users.io/widget.html';
+  var editUrl = 'http://ide.c9.io/' +
+    process.env.C9_USER + '/' +
+    process.env.C9_PROJECT;
+  var github = getGithubUrl();
+
+  var reUrl = /(url\s*:\s*['"]?)\(auto fill by runme\.js\)/;
+  console.log("reUrl:", reUrl);
+  widgetSrc = widgetSrc.replace(reUrl, "$1" + github.rawurl);
+  widgetSrc = widgetSrc.replace(/(fiddleurl\s*:\s*['"]?)\(auto fill by runme\.js\)/, "$1" + editUrl);
+  widgetSrc = widgetSrc.replace(/(githuburl\s*:\s*['"]?)\(auto fill by runme\.js\)/, "$1" + github.url);
+  widgetSrc = widgetSrc.replace(/(testurl\s*:\s*['"]?)\(auto fill by runme\.js\)/, "$1" + widgetUrl);
+  
+  // rewrite the javascript
+  //fs.writeFileSync('widget.js', widgetSrc);
+  
   eval(widgetSrc);
   console.log("evaled the widget.js");
   //isEvaled = true;
@@ -127,7 +148,8 @@ var evalWidgetJs = function() {
       var srcFirstLine = obj.toString().substring(0, obj.toString().indexOf("\n"));
       // drop {
       srcFirstLine = srcFirstLine.replace(/\{/, "");
-      objDoc.descHtml = srcFirstLine + "<br><br>";
+      objDoc.descHtml = srcFirstLine; // + "<br><br>";
+      objDoc.descMd = srcFirstLine; // + "\n\n";
       
       // we have the source code for the function, so go find it, but then
       // look at the comments above it
@@ -139,7 +161,14 @@ var evalWidgetJs = function() {
         
         // extract docs from above this method
         var docItem = extractDocs(indx);
-        objDoc.descHtml += docItem.html;
+        if (docItem.html.length > 0) {
+          if (objDoc.descHtml.length > 0) objDoc.descHtml += '<br><br>';
+          objDoc.descHtml += docItem.html;
+        }
+        if (docItem.md.length > 0) {
+          if (objDoc.descMd.length > 0) objDoc.descMd += '\n\n';
+          objDoc.descMd += docItem.md;
+        }
         objDoc.descSrc += docItem.src;
       }
       
@@ -150,6 +179,7 @@ var evalWidgetJs = function() {
       if (obj.length > 0) {
         //objDoc.descHtml += "Default value: " + JSON.stringify(obj);
         objDoc.descHtml += JSON.stringify(obj);
+        objDoc.descMd += JSON.stringify(obj);
       }
       
       // see if any docs in src code
@@ -162,6 +192,10 @@ var evalWidgetJs = function() {
           if (objDoc.descHtml.length > 0) objDoc.descHtml += '<br><br>';
           objDoc.descHtml += docItem.html;
         }
+        if (docItem.md.length > 0) {
+          if (objDoc.descMd.length > 0) objDoc.descMd += '\n\n';
+          objDoc.descMd += docItem.md;
+        }
         objDoc.descSrc += docItem.src;
       }
 
@@ -170,20 +204,27 @@ var evalWidgetJs = function() {
       objDoc.descSrc = JSON.stringify(obj, null, "  ");
       
       if (key.match(/publish|subscribe|foreignPublish|foreignSubscribe/)) {
-        objDoc.descHtml += "Please see docs above";
-      } else {
-        // look for description above or at end of line of source code
+        objDoc.descHtml += "Please see docs above.";
+      } 
+      
+      // look for description above or at end of line of source code
 
-        var indx = widgetSrc.regexIndexOf(new RegExp(key + "\\s*?:"));
-        if (indx > 0) {
-          
-          // extract docs from above this method
-          var docItem = extractDocs(indx);
+      var indx = widgetSrc.regexIndexOf(new RegExp(key + "\\s*?:"));
+      if (indx > 0) {
+        
+        // extract docs from above this method
+        var docItem = extractDocs(indx);
+        if (docItem.html.length > 0) {
+          if (objDoc.descHtml.length > 0) objDoc.descHtml += '<br><br>';
           objDoc.descHtml += docItem.html;
-          objDoc.descSrc += docItem.src;
         }
-
+        if (docItem.md.length > 0) {
+          if (objDoc.descMd.length > 0) objDoc.descMd += '\n\n';
+          objDoc.descMd += docItem.md;
+        }
+        objDoc.descSrc += docItem.src;
       }
+
     }
 
   }
@@ -235,6 +276,9 @@ var extractDocs = function(indx) {
     
     //console.log("clean comment for " + key + " " + comment);
     o.html += comment;
+    // make it work for markdown
+    o.md += comment.replace("<br><br>", "\n\n").replace(/<b>|<\/b>/g, "");
+    
   }
   return o;
 }
@@ -244,7 +288,7 @@ cpdefine = function(myid, mydeps, callback) {
   widget = callback();
   id = myid;
   deps = mydeps;
-  console.log("cool, our own cpdefine got called. id:", id, "deps:", deps, "widget:", widget);
+  console.log("cool, our own cpdefine got called. id:", id, "deps:", deps);
 }
 // define other top-level methods just to avoid errors
 requirejs = function() {}
@@ -259,6 +303,8 @@ var generateWidgetReadme = function() {
   // Spit out Markdown docs
   var md = `# $widget-id
 $widget-desc
+
+$widget-img
 
 ## ChiliPeppr $widget-name
 
@@ -278,11 +324,60 @@ not conflict with other ChiliPeppr widgets.
 
 ## Example Code for chilipeppr.load() Statement
 
-You can use the code below as a starting point for instantiating this widget inside a workspace or from another widget. The key is that you need to load your widget inlined into a div so the DOM can parse your HTML, CSS, and Javascript. Then you use cprequire() to find your widget's Javascript and get back the instiated instance of it.
+You can use the code below as a starting point for instantiating this widget 
+inside a workspace or from another widget. The key is that you need to load 
+your widget inlined into a div so the DOM can parse your HTML, CSS, and 
+Javascript. Then you use cprequire() to find your widget's Javascript and get 
+back the instance of it.
 
 \`\`\`javascript
 $widget-cploadjs
 \`\`\`
+
+## Publish
+
+This widget/element publishes the following signals. These signals are owned by this widget/element and are published to all objects inside the ChiliPeppr environment that listen to them via the 
+chilipeppr.subscribe(signal, callback) method. 
+To better understand how ChiliPeppr's subscribe() method works see amplify.js's documentation at http://amplifyjs.com/api/pubsub/
+
+| Signal | Description |
+| ------ | ----------- |
+$widget-publish
+
+## Subscribe
+
+This widget/element subscribes to the following signals. These signals are owned by this widget/element. Other objects inside the ChiliPeppr environment can publish to these signals via the chilipeppr.publish(signal, data) method. 
+To better understand how ChiliPeppr's publish() method works see amplify.js's documentation at http://amplifyjs.com/api/pubsub/
+
+| Signal | Description |
+| ------ | ----------- |
+$widget-subscribe
+
+## Foreign Publish
+
+This widget/element publishes to the following signals that are owned by other objects. 
+To better understand how ChiliPeppr's subscribe() method works see amplify.js's documentation at http://amplifyjs.com/api/pubsub/
+
+| Signal | Description |
+| ------ | ----------- |
+$widget-foreignpublish
+
+## Foreign Subscribe
+
+This widget/element publishes to the following signals that are owned by other objects.
+To better understand how ChiliPeppr's publish() method works see amplify.js's documentation at http://amplifyjs.com/api/pubsub/
+
+| Signal | Description |
+| ------ | ----------- |
+$widget-foreignsubscribe
+
+## Methods / Properties
+
+The table below shows, in order, the methods and properties inside the widget/element.
+
+| Item                  | Type          | Description |
+| -------------         | ------------- | ----------- |
+$widget-methprops
 
 ## About ChiliPeppr
 
@@ -336,11 +431,59 @@ will you build on top of it?
   var cpload = generateCpLoadStmt();
   md = md.replace(/\$widget-cploadjs/g, cpload);
 
+  // see if there is a screenshot, if so use it
+  var img = "";
+  if (fs.existsSync("screenshot.png")) {
+    img = "![alt text]" + 
+    "(screenshot.png \"Screenshot\")";
+  }
+  md = md.replace(/\$widget-img/g, img);
+
+  // now generate methods/properties
+  //$widget-methprops
+  var s = "";
+  for (var key in widget) {
+    var obj = widget[key];
+    s += '| ' + key +
+      ' | ' + typeof obj +
+      ' | ';
+    s += widgetDocs[key].descHtml.replace(/[\r\n]/g, "");
+    s += ' |\n';
+  }
+  //console.log("adding markdown:", s);
+  md = md.replace(/\$widget-methprops/g, s);
+
+
+  // now do pubsub signals
+  var s;
+  s = appendKeyValForMarkdown(widget.publish);
+  md = md.replace(/\$widget-publish/, s);
+  s = appendKeyValForMarkdown(widget.subscribe);
+  md = md.replace(/\$widget-subscribe/, s);
+  s = appendKeyValForMarkdown(widget.foreignPublish);
+  md = md.replace(/\$widget-foreignpublish/, s);
+  s = appendKeyValForMarkdown(widget.foreignSubscribe);
+  md = md.replace(/\$widget-foreignsubscribe/, s);
+
 
   // now write out the auto-gen file
   fs.writeFileSync("README.md", md);
   console.log("Rewrote README.md");
   
+}
+
+var appendKeyValForMarkdown = function(data, id) {
+  var str = "";
+  if (data != null && typeof data === 'object' && Object.keys(data).length > 0) {
+        
+    //var keys = Object.keys(data);
+    for (var key in data) {
+      str += '| /' + widget.id + "" + key + ' | ' + data[key].replace(/\n/, "<br>") + ' |';
+    }
+  } else {
+    str = '| (No signals defined in this widget/element) |';
+  }
+  return str;
 }
 
 var generateWidgetDocs = function() {
@@ -369,8 +512,6 @@ var generateWidgetDocs = function() {
       <h1 class="page-header" style="margin-top:0;">$pubsub-id</h1>
       
       <p>$pubsub-desc</p>
-      
-      <!--
 
       <h2>ChiliPeppr Widget Docs</h2>
 
@@ -532,8 +673,6 @@ var generateWidgetDocs = function() {
       </tbody>
   </table>
   
-  -->
-  
   <h2>Methods / Properties</h2>
   <p>The list below shows, in order, the methods and properties that exist
   inside this widget/element.</p>
@@ -599,6 +738,7 @@ var generateWidgetDocs = function() {
   var cpload = generateCpLoadStmt();
   html = html.replace(/\$cp-load-stmt/g, cpload);
   
+  // do the properties and methods
   var s = "";
   for (var key in widget) {
     var obj = widget[key];
@@ -645,7 +785,7 @@ var appendKeyVal = function(data, id) {
         
     //var keys = Object.keys(data);
     for (var key in data) {
-      str += '<tr><td>' + key + '</td><td>' + data[key] + '</td></tr>';
+      str += '<tr><td>/' + widget.id + "" + key + '</td><td>' + data[key] + '</td></tr>';
     }
   } else {
     str = '<tr><td colspan="2">(No signals defined in this widget/element)</td></tr>';
@@ -720,7 +860,7 @@ var generateInlinedFile = function() {
   // be the file that is loaded by ChiliPeppr.
   var fileCss = fs.readFileSync("widget.css").toString();
   var fileHtml = fs.readFileSync("widget.html").toString();
-  var fileJs = fs.readFileSync("widget.js").toString();
+  var fileJs = widgetSrc; // fs.readFileSync("widget.js").toString();
 
   // now inline css
   var re = /<!-- widget.css[\s\S]*?end widget.css -->/i;
