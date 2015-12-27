@@ -7,8 +7,8 @@ All ChiliPeppr widgets/elements are defined using cpdefine() which is a method
 that mimics require.js. Each defined object must have a unique ID so it does
 not conflict with other ChiliPeppr widgets.
 
-| Item        | Value           |
-| ------------- |:-------------:| 
+| Item                  | Value           |
+| -------------         | ------------- | 
 | ID                    | com-chilipeppr-widget-template |
 | Name                  | Widget / ChiliPepr Template |
 | Description           | This example widget lets you do something. Please change this description |
