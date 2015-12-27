@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <title>Widget / Machine Vision</title>
+
+    <!-- ChiliPeppr is based on bootstrap CSS. -->
+    <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+    <!-- Customized version of require.js for ChiliPeppr. Please see require.js docs for how
+    ChiliPeppr's dependency system works as it's based on require.js. -->
+    <script type='text/javascript' src="//i2dcui.appspot.com/js/require.js"></script>
+
+    <style type='text/css'>
+/* CSS for ChiliPeppr Widget */
+
+#com-chilipeppr-widget-template {
+    /*margin: 10px;*/
+}
+
+#com-chilipeppr-widget-template .nav-tabs>li>a {
+    padding: 2px 6px;
+}
+
+
+    </style>
+
+    <script type='text/javascript'>
+    //<![CDATA[
+// ChiliPeppr Widget/Element Javascript
+
+requirejs.config({
+    /*
+    Dependencies can be defined here. ChiliPeppr uses require.js so
+    please refer to http://requirejs.org/docs/api.html for info.
+    
+    Most widgets will not need to define Javascript dependencies.
+    
+    Make sure all URLs are https and http accessible. Try to use URLs
+    that start with // rather than http:// or https:// so they simply
+    use whatever method the main page uses.
+    
+    Also, please make sure you are not loading dependencies from different
+    URLs that other widgets may already load like jquery, bootstrap,
+    three.js, etc.
+    
+    You may slingshot content through ChiliPeppr's proxy URL if you desire
+    to enable SSL for non-SSL URL's. ChiliPeppr's SSL URL is
+    https://i2dcui.appspot.com which is the SSL equivalent for
+    http://chilipeppr.com
+    */
+    paths: {
+        // Example of how to define the key (you make up the key) and the URL
+        // Make sure you DO NOT put the .js at the end of the URL
+        // SmoothieCharts: '//smoothiecharts.org/smoothie',
+    },
+    shim: {
+        // See require.js docs for how to define dependencies that
+        // should be loaded before your script/widget.
+    }
+});
+
+cprequire_test(["inline:com-chilipeppr-widget-template"], function(myWidget) {
+
+    // Test this element. This code is auto-removed by the chilipeppr.load()
+    // when using this widget in production. So use the cpquire_test to do things
+    // you only want to have happen during testing, like loading other widgets or
+    // doing unit tests. Don't remove end_test at the end or auto-remove will fail.
+
+    console.log("test running of " + myWidget.id);
+
+    $('body').prepend('<div id="testDivForFlashMessageWidget"></div>');
+
+    chilipeppr.load(
+        "#testDivForFlashMessageWidget",
+        "http://fiddle.jshell.net/chilipeppr/90698kax/show/light/",
+        function() {
+            console.log("mycallback got called after loading flash msg module");
+            cprequire(["inline:com-chilipeppr-elem-flashmsg"], function(fm) {
+                //console.log("inside require of " + fm.id);
+                fm.init();
+            });
+        }
+    );
+
+    // init my widget
+    myWidget.init();
+
+} /*end_test*/ );
+
+// This is the main definition of your widget. Give it a unique name.
+cpdefine("inline:com-chilipeppr-widget-template", ["chilipeppr_ready", /* other dependencies here */ ], function() {
+    return {
+        id: "com-chilipeppr-widget-template", // Make the id the same as the cpdefine id
+        url: "(auto fill by runme.js)", // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
+        fiddleurl: "(auto fill by runme.js)", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
+        name: "xWidget / ChiliPepr Template", // The descriptive name of your widget.
+        desc: "This example widget lets you do something.", // A description of what your widget does
+        // Define pubsub signals below. These are basically ChiliPeppr's event system.
+        // ChiliPeppr uses amplify.js's pubsub system so please refer to docs at
+        // http://amplifyjs.com/api/pubsub/
+        publish: {
+            // Define a key:value pair here as strings to document what signals you publish.
+            '/onExampleGenerate': 'Example: Publish this signal when we go to generate gcode.'
+        },
+        subscribe: {
+            // Define a key:value pair here as strings to document what signals you subscribe to
+            // so other widgets can publish to this widget to have it do something.
+            // '/onExampleConsume': 'Example: This widget subscribe to this signal so other widgets can send to us and we'll do something with it.'
+        },
+        foreignPublish: {
+            // Define a key:value pair here as strings to document what signals you publish to
+            // that are owned by foreign/other widgets.
+            // '/jsonSend': 'Example: We send Gcode to the serial port widget to do stuff with the CNC controller.'
+        },
+        foreignSubscribe: {
+            // Define a key:value pair here as strings to document what signals you subscribe to
+            // that are owned by foreign/other widgets.
+            // '/com-chilipeppr-elem-dragdrop/ondropped': 'Example: We subscribe to this signal at a higher priority to intercept the signal. We do not let it propagate by returning false.'
+        },
+        init: function() {
+            console.log("I am being initted. Thanks.");
+
+            this.setupUiFromLocalStorage();
+            this.btnSetup();
+            this.forkSetup();
+
+            console.log("I am done being initted.");
+        },
+        options: null,
+        setupUiFromLocalStorage: function() {
+
+            // read vals from localStorage. make sure to use unique
+            // key specific to this widget so as not to overwrite other
+            // widgets' options
+            var options = localStorage.getItem(this.id + '-options');
+
+            if (options) {
+                options = $.parseJSON(options);
+                console.log("just evaled options: ", options);
+            }
+            else {
+                options = {
+                    showBody: true,
+                    tabShowing: 1,
+                    customParam1: null,
+                    customParam2: 1.0
+                };
+            }
+
+            this.options = options;
+            console.log("options:", options);
+
+            // show/hide body
+            if (options.showBody) {
+                this.showBody();
+            }
+            else {
+                this.hideBody();
+            }
+
+        },
+        saveOptionsLocalStorage: function() {
+            //var options = {
+            //    showBody: this.options.showBody
+            //};
+            var options = this.options;
+
+            var optionsStr = JSON.stringify(options);
+            console.log("saving options:", options, "json.stringify:", optionsStr);
+            // store settings to localStorage
+            localStorage.setItem(this.id + '-options', optionsStr);
+        },
+        showBody: function(evt) {
+            $('#' + this.id + ' .panel-body').removeClass('hidden');
+            $('#' + this.id + ' .panel-footer').removeClass('hidden');
+            $('#' + this.id + ' .hidebody span').addClass('glyphicon-chevron-up');
+            $('#' + this.id + ' .hidebody span').removeClass('glyphicon-chevron-down');
+            if (!(evt == null)) {
+                this.options.showBody = true;
+                this.saveOptionsLocalStorage();
+            }
+        },
+        hideBody: function(evt) {
+            $('#' + this.id + ' .panel-body').addClass('hidden');
+            $('#' + this.id + ' .panel-footer').addClass('hidden');
+            $('#' + this.id + ' .hidebody span').removeClass('glyphicon-chevron-up');
+            $('#' + this.id + ' .hidebody span').addClass('glyphicon-chevron-down');
+            if (!(evt == null)) {
+                this.options.showBody = false;
+                this.saveOptionsLocalStorage();
+            }
+        },
+        btnSetup: function() {
+
+            // chevron hide body
+            var that = this;
+            $('#' + this.id + ' .hidebody').click(function(evt) {
+                console.log("hide/unhide body");
+                if ($('#' + that.id + ' .panel-body').hasClass('hidden')) {
+                    // it's hidden, unhide
+                    that.showBody(evt);
+                }
+                else {
+                    // hide
+                    that.hideBody(evt);
+                }
+            });
+
+            $('#' + this.id + ' .btn-toolbar .btn').popover({
+                delay: 1000,
+                animation: true,
+                placement: "auto",
+                trigger: "hover",
+                container: 'body'
+            });
+
+            // Init Say Hello Button on Main Toolbar
+            $('#' + this.id + ' .btn-sayhello').click(function() {
+                console.log("saying hello");
+                chilipeppr.publish(
+                    "/com-chilipeppr-elem-flashmsg/flashmsg",
+                    "Hello Title",
+                    "Hello World"
+                );
+            });
+
+            // Init Hello World 2 button on Tab 1
+            $('#' + this.id + ' .btn-helloworld2').click(function() {
+                console.log("saying hello 2 from btn in tab 1");
+                chilipeppr.publish(
+                    '/com-chilipeppr-elem-flashmsg/flashmsg',
+                    "Hello 2 Title",
+                    "Hello World 2 from Tab 1",
+                    1000 /* show for 1 second */
+                );
+            });
+        },
+        forkSetup: function() {
+            var topCssSelector = '#' + this.id;
+
+            $(topCssSelector + ' .panel-title').popover({
+                title: this.name,
+                content: this.desc,
+                html: true,
+                delay: 1000,
+                animation: true,
+                trigger: 'hover',
+                placement: 'auto'
+            });
+
+            var that = this;
+            chilipeppr.load("http://fiddle.jshell.net/chilipeppr/zMbL9/show/light/", function() {
+                require(['inline:com-chilipeppr-elem-pubsubviewer'], function(pubsubviewer) {
+                    pubsubviewer.attachTo($(topCssSelector + ' .panel-heading .dropdown-menu'), that);
+                });
+            });
+
+        },
+
+    }
+});
+    //]]>
+    </script>
+
+</head>
+
+<body>
+    <div id="com-chilipeppr-widget-template" class="panel panel-default">
+        <div class="panel-heading ">
+
+            <div class="btn-toolbar pull-right" role="toolbar">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-default btn-sayhello" data-delay="1000" data-animation="true" data-placement="auto" data-container="body" data-trigger="hover" data-title="Say Hello" data-content="Generate a hello message">Say Hello
+                    </button>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-default hidebody"><span class="glyphicon glyphicon-chevron-up"></span>
+                    </button>
+                </div>
+                <div class="btn-group">
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-right" role="menu"></ul>
+                    </div>
+                </div>
+            </div> <span class="panel-title" data-toggle="popover">Template Widget</span> <span style="font-size:9px;" class="fb-build">v1</span>
+
+        </div>
+        <div class="panel-body">
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="active"><a href="#com-chilipeppr-widget-template-tab1" role="tab" data-toggle="tab">Tab 1</a>
+                </li>
+                <li><a href="#com-chilipeppr-widget-template-tab2" role="tab" data-toggle="tab">Tab 2</a></li>
+                <li><a href="#com-chilipeppr-widget-template-tab3" role="tab" data-toggle="tab">Tab 3</a></li>
+            </ul>
+            <!-- Tab panes -->
+
+            <!-- Tab 1 -->
+            <div class="tab-content">
+                <div class="tab-pane active" id="com-chilipeppr-widget-template-tab1">
+                    <p>This is the content of tab 1.</p>
+                    <div class="">
+                        <button type="button" class="btn btn-xs btn-default btn-helloworld2" style="margin: 4px 0;">Hello World 2</button>
+                    </div>
+                </div>
+
+                <!-- Tab 2 -->
+                <div class="tab-pane" id="com-chilipeppr-widget-template-tab2">
+                    <p>This is the content of tab 2.</p>
+                </div>
+
+                <!-- Tab 3 -->
+                <div class="tab-pane" id="com-chilipeppr-widget-template-tab3">
+                    <p>This is the content of tab 3.</p>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>
