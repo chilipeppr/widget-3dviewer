@@ -40,7 +40,6 @@ cprequire_test(["inline:com-chilipeppr-widget-template"], function(myWidget) {
 
     console.log("test running of " + myWidget.id);
 
-    $('#com-chilipeppr-widget-template').css('margin', '10px;');
     $('body').prepend('<div id="testDivForFlashMessageWidget"></div>');
 
     chilipeppr.load(
@@ -57,6 +56,7 @@ cprequire_test(["inline:com-chilipeppr-widget-template"], function(myWidget) {
 
     // init my widget
     myWidget.init();
+    $('#com-chilipeppr-widget-template').css('padding', '10px;');
 
 } /*end_test*/ );
 
