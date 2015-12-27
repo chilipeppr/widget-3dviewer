@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # In Cloud9 IDE, right-click and choose "Run" on this file to push your changes to 
 # Github. The Cloud9 IDE will run this on the virtual machine command line to
 # trigger the push to Github. Of course you can manually run these commands too

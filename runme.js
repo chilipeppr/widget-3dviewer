@@ -59,8 +59,8 @@ http.createServer(function(req, res) {
 
     //var html = getMainPage();
     var html = generateWidgetDocs();
-    generateInlinedFile();
-    generateWidgetReadme();
+    //generateInlinedFile();
+    //generateWidgetReadme();
 
     res.end(html);
 
@@ -87,7 +87,13 @@ http.createServer(function(req, res) {
 
 }).listen(process.env.PORT);
 
-var widget, id, deps, cpdefine, requirejs, cprequire_test;
+String.prototype.regexIndexOf = function(regex, startpos) {
+    var indexOf = this.substring(startpos || 0).search(regex);
+    return (indexOf >= 0) ? (indexOf + (startpos || 0)) : indexOf;
+}
+
+var widgetSrc, widget, id, deps, cpdefine, requirejs, cprequire_test;
+var widgetDocs = {};
 
 var isEvaled = false;
 var evalWidgetJs = function() {
@@ -97,10 +103,140 @@ var evalWidgetJs = function() {
   // This method reads in your widget.js and evals it to
   // figure out all the info from it to generate docs and sample
   // code to make your life easy
-  eval(fs.readFileSync('widget.js')+'');
+  widgetSrc = fs.readFileSync('widget.js')+'';
+  eval(widgetSrc);
   console.log("evaled the widget.js");
   //isEvaled = true;
   
+  // generate docs
+  for (var key in widget) {
+    
+    var obj = widget[key];
+    widgetDocs[key] = {
+      type: typeof obj,
+      property: false,
+      method: false,
+      descSrc: "",
+      descHtml: "",
+      descMd: "", // markdown
+    };
+    var objDoc = widgetDocs[key];
+    
+    if (typeof obj === 'function') {
+
+      var srcFirstLine = obj.toString().substring(0, obj.toString().indexOf("\n"));
+      // drop {
+      srcFirstLine = srcFirstLine.replace(/\{/, "");
+      objDoc.descHtml = srcFirstLine + "<br><br>";
+      
+      // we have the source code for the function, so go find it, but then
+      // look at the comments above it
+      //var indx = widgetSrc.indexOf(obj.toString());
+      var indx = widgetSrc.regexIndexOf(new RegExp(key + "\\s*?:\\s*?function"));
+      if (indx > 0) {
+        
+        //s += "found index " + indx;  
+        
+        // extract docs from above this method
+        var docItem = extractDocs(indx);
+        objDoc.descHtml += docItem.html;
+        objDoc.descSrc += docItem.src;
+      }
+      
+    } else if (typeof obj === 'string') {
+      objDoc.descSrc = JSON.stringify(obj);
+      
+      // if there's a default value then put it in docs
+      if (obj.length > 0) {
+        //objDoc.descHtml += "Default value: " + JSON.stringify(obj);
+        objDoc.descHtml += JSON.stringify(obj);
+      }
+      
+      // see if any docs in src code
+      var indx = widgetSrc.regexIndexOf(new RegExp(key + "\\s*?:"));
+      if (indx > 0) {
+        
+        // extract docs from above this method
+        var docItem = extractDocs(indx);
+        if (docItem.html.length > 0) {
+          if (objDoc.descHtml.length > 0) objDoc.descHtml += '<br><br>';
+          objDoc.descHtml += docItem.html;
+        }
+        objDoc.descSrc += docItem.src;
+      }
+
+      
+    } else {
+      objDoc.descSrc = JSON.stringify(obj, null, "  ");
+      
+      if (key.match(/publish|subscribe|foreignPublish|foreignSubscribe/)) {
+        objDoc.descHtml += "Please see docs above";
+      } else {
+        // look for description above or at end of line of source code
+
+        var indx = widgetSrc.regexIndexOf(new RegExp(key + "\\s*?:"));
+        if (indx > 0) {
+          
+          // extract docs from above this method
+          var docItem = extractDocs(indx);
+          objDoc.descHtml += docItem.html;
+          objDoc.descSrc += docItem.src;
+        }
+
+      }
+    }
+
+  }
+}
+
+// We are passed in an indx which is where we start in the overall
+// widgetSrc. We look backwards, i.e. line/lines above for comments
+var extractDocs = function(indx) {
+  
+  var o = {
+    html: "", // html docs
+    src: "",  // src docs
+    md: ""    // markdown docs
+  }
+  
+  // if there is a */ up to this indx we've got a comment
+  // reverse string to search backwards
+  var partial = widgetSrc.substring(0, indx);
+  var widgetSrcRev = reverseStr(partial);
+  //console.log("candidate for " + key + ":", widgetSrcRev.substring(0, 100));
+  
+  // if the next item in rev str is /* then we have a comment
+  if (widgetSrcRev.match(/^[\s\r\n]+\/\*/)) {
+    
+    // search to **/ which is /**
+    var indx2 = widgetSrcRev.indexOf("**/");
+    var comment = widgetSrcRev.substring(0, indx2);
+    comment = reverseStr(comment);
+    //console.log("comment for " + key + ":", comment);
+    o.src = comment;
+    
+    // cleanup
+    comment = comment.replace(/[\r\n\s\*\/]+$/, ""); // cleanup end
+    var lines = comment.split(/\r?\n/);
+    var newlines = [];
+    for (var ctr in lines) {
+      var line = lines[ctr];
+      line = line.replace(/^[\s\*]+/g, "");
+      newlines.push(line);
+    }
+    comment = newlines.join("\n");
+    comment = comment.replace(/^[\s\r\n]/, ""); // cleanup beginning
+    
+    // convert two newlines to <br><br>
+    comment = comment.replace(/\n\n/g, "<br><br>");
+    
+    // put more space in front of @param
+    comment = comment.replace(/\@param\s+?(\S+)\s+?(\S+)\s*?\-?\s*?/g, "<br><br><b>$2</b> ($1) ");
+    
+    //console.log("clean comment for " + key + " " + comment);
+    o.html += comment;
+  }
+  return o;
 }
 
 // create our own version of cpdefine so we can use the evalWidgetJs above
@@ -234,6 +370,8 @@ var generateWidgetDocs = function() {
       
       <p>$pubsub-desc</p>
       
+      <!--
+
       <h2>ChiliPeppr Widget Docs</h2>
 
       <p>The content below is auto generated as long as you follow the standard
@@ -301,7 +439,14 @@ var generateWidgetDocs = function() {
 
   <div class="pubsub-interface hidden">
       <h2>Interface Implementation</h2>
-      <p>This widget/element implements an interface specification. Since Javascript does not have the notion of interfaces like the way languages such as Java have native support for interfaces, ChiliPeppr has defined its own loose version of an interface. If this widget/element has implemented an interface, it means it has followed a general standard set of pubsub signals that other widgets/elements should follow as well to make them swappable.</p>
+      <p>This widget/element implements an interface specification. Since 
+      Javascript does not have the notion of interfaces like the way languages 
+      such as Java have native support for interfaces, ChiliPeppr has defined 
+      its own loose version of an interface. If this widget/element has 
+      implemented an interface, it means it has followed a general standard 
+      set of pubsub signals that other widgets/elements should follow as well 
+      to make them swappable.</p>
+      
   <table id="com-chilipeppr-elem-pubsubviewer-interface" class="table table-bordered table-striped">
       <thead>
           <tr>
@@ -313,7 +458,7 @@ var generateWidgetDocs = function() {
           
       </tbody>
   </table>
-  </div><!-- interface -->
+  </div>
   
   <h2>Publish</h2>
   <p>This widget/element publishes the following signals. These signals are owned by this widget/element and are published to all objects inside the ChiliPeppr environment that listen to them via the chilipeppr.subscribe(signal, callback) method.</p>
@@ -387,6 +532,8 @@ var generateWidgetDocs = function() {
       </tbody>
   </table>
   
+  -->
+  
   <h2>Methods / Properties</h2>
   <p>The list below shows, in order, the methods and properties that exist
   inside this widget/element.</p>
@@ -458,15 +605,8 @@ var generateWidgetDocs = function() {
     s += '<tr><td>' + key +
       '</td><td>' + typeof obj +
       '</td><td>';
-
-    if (typeof obj === 'function') {
-      s += obj.toString().split(/\n/)[0].replace(/\{.*$/, "");
-    } else if (typeof obj === 'string') {
-      s += JSON.stringify(obj);
-    } else {
-      s += JSON.stringify(obj, null, "  ");
-    }
-    s += '</td></tr>'
+    s += widgetDocs[key].descHtml;
+    s += '</td></tr>';
   }
   html = html.replace(/\$row-methods-start[\s\S]+?\$row-methods-end/g, s);
 
@@ -481,8 +621,22 @@ var generateWidgetDocs = function() {
   s = appendKeyVal(widget.foreignSubscribe);
   html = html.replace(/\$row-foreign-subscribe-start[\s\S]+?\$row-foreign-subscribe-end/g, s);
   
+  // debug source for widget
+  /*
+  html = html.replace(
+    /\$fullwidget/, 
+    widget.toString().replace(/\n/g, "<br>").replace(/ /g, "&nbsp;")
+  );
+  */
 
   return html;
+}
+
+var reverseStr = function(s) {
+  var o = '';
+  for (var i = s.length - 1; i >= 0; i--)
+    o += s[i];
+  return o;
 }
 
 var appendKeyVal = function(data, id) {

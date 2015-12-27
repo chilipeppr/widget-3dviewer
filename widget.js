@@ -67,9 +67,11 @@ cpdefine("inline:com-chilipeppr-widget-template", ["chilipeppr_ready", /* other 
         fiddleurl: "(auto fill by runme.js)", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
         name: "Widget / ChiliPeppr Template", // The descriptive name of your widget.
         desc: "This example widget lets you do something. Please change this description", // A description of what your widget does
-        // Define pubsub signals below. These are basically ChiliPeppr's event system.
-        // ChiliPeppr uses amplify.js's pubsub system so please refer to docs at
-        // http://amplifyjs.com/api/pubsub/
+        /**
+         * Define pubsub signals below. These are basically ChiliPeppr's event system.
+         * ChiliPeppr uses amplify.js's pubsub system so please refer to docs at
+         * http://amplifyjs.com/api/pubsub/
+         */
         publish: {
             // Define a key:value pair here as strings to document what signals you publish.
             '/onExampleGenerate': 'Example: Publish this signal when we go to generate gcode.'
@@ -101,6 +103,9 @@ cpdefine("inline:com-chilipeppr-widget-template", ["chilipeppr_ready", /* other 
             this.forkSetup();
 
             console.log("I am done being initted.");
+        },
+        methodWithNoDocs: function(blah) {
+            
         },
         /**
          * Call this method from init to setup all the buttons when this widget
@@ -235,7 +240,7 @@ cpdefine("inline:com-chilipeppr-widget-template", ["chilipeppr_ready", /* other 
         },
         /**
          * Show the body of the panel.
-         * @param {jquery event} evt - If you pass the event parameter in, we 
+         * @param {jquery_event} evt - If you pass the event parameter in, we 
          * know it was clicked by the user and thus we store it for the next 
          * load so we can reset the user's preference. If you don't pass this 
          * value in we don't store the preference because it was likely code 
@@ -253,7 +258,7 @@ cpdefine("inline:com-chilipeppr-widget-template", ["chilipeppr_ready", /* other 
         },
         /**
          * Hide the body of the panel.
-         * @param {jquery event} evt - If you pass the event parameter in, we 
+         * @param {jquery_event} evt - If you pass the event parameter in, we 
          * know it was clicked by the user and thus we store it for the next 
          * load so we can reset the user's preference. If you don't pass this 
          * value in we don't store the preference because it was likely code 
