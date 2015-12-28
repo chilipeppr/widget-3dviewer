@@ -90,12 +90,12 @@ The table below shows, in order, the methods and properties inside the widget/el
 | Item                  | Type          | Description |
 | -------------         | ------------- | ----------- |
 | id | string | "com-chilipeppr-widget-template"<br><br>The ID of the widget. You must define this and make it unique. |
+| name | string | "Widget / Template" |
+| desc | string | "This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget." |
 | url | string | "http://raw.githubusercontent.com/chilipeppr/com-chilipeppr-widget-template/master/auto-generated-widget.html" |
 | fiddleurl | string | "http://ide.c9.io/chilipeppr/com-chilipeppr-widget-template" |
 | githuburl | string | "http://github.com/chilipeppr/com-chilipeppr-widget-template" |
 | testurl | string | "http://com-chilipeppr-widget-template-chilipeppr.c9users.io/widget.html" |
-| name | string | "Widget / Template" |
-| desc | string | "This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget." |
 | publish | object | Please see docs above.<br><br>Define the publish signals that this widget/element owns or defines so thatother widgets know how to subscribe to them and what they do. |
 | subscribe | object | Please see docs above.<br><br>Define the subscribe signals that this widget/element owns or defines so thatother widgets know how to subscribe to them and what they do. |
 | foreignPublish | object | Please see docs above.<br><br>Document the foreign publish signals, i.e. signals owned by other widgetsor elements, that this widget/element publishes to. |
