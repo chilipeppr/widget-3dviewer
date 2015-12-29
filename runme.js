@@ -552,6 +552,8 @@ var generateWidgetDocs = function() {
     </head>
     <body style="padding:20px;">
     
+      <button class="btn btn-xs btn-pushtogithub">Push to Github</button>
+    
       <h1 class="page-header" style="margin-top:0;">$pubsub-id</h1>
       
       <p>$pubsub-desc</p>
