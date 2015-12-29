@@ -868,6 +868,19 @@ var generateInlinedFile = function() {
   var fileHtml = fs.readFileSync("widget.html").toString();
   var fileJs = widgetSrc; // fs.readFileSync("widget.js").toString();
 
+  // auto fill title if they're asking for it
+  if (widget) {
+    var re = /<title><!--\(auto-fill by runme\.js--><\/title>/i;
+    if (fileHtml.match(re)) {
+    fileHtml = fileHtml.replace(re, widget.name);
+    console.log("Swapped in title for final HTML page.");
+    } else {
+      console.log('Went to swap in title, but the auto fill comment not found.');
+    }
+  } else {
+    console.log("Could not auto-fill title of HTML page because widget object not defined.");
+  }
+
   // now inline css
   var re = /<!-- widget.css[\s\S]*?end widget.css -->/i;
   fileHtml = fileHtml.replace(re,
