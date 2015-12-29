@@ -945,7 +945,7 @@ var getGithubUrl = function(callback) {
     var data = fs.readFileSync(path).toString();
 
     // test data
-    data = "99b78fc488c3874b40ecf0df4030a0d2747276aa                branch 'master' of https://github.com/xpix/chilipeppr-calibrate-widget\n";
+    //data = "99b78fc488c3874b40ecf0df4030a0d2747276aa                branch 'master' of https://github.com/xpix/chilipeppr-calibrate-widget\n";
 
     //console.log("git url:", data);
     data = data.replace(/[\r\n]/g, "");
