@@ -952,6 +952,22 @@ var pushToGithubSync = function() {
   // git push
   var stdout = "";
   stdout += "> git add *\n";
+  stdout += '> git commit -m "Made some changes to ChiliPeppr widget using Cloud9"\n';
+  stdout += "> git push\n";
+  stdout += proc.execSync('git add *; git commit -m \"Changes made in Cloud9\""; git push;', { encoding: 'utf8' });
+  console.log("Pushed to github sync. Stdout:", stdout);
+  
+  return stdout;
+}
+
+var pushToGithubSyncOld = function() {
+  var proc = require('child_process');
+  
+  // git add *
+  // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
+  // git push
+  var stdout = "";
+  stdout += "> git add *\n";
   stdout += proc.execSync('git add *', { encoding: 'utf8' });
   stdout += '> git commit -m "Made some changes to ChiliPeppr widget using Cloud9"\n';
   stdout += proc.execSync('bash -c "git commit -m \"Changes made in Cloud9\""', { encoding: 'utf8' });
