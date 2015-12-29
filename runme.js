@@ -566,9 +566,10 @@ var generateWidgetDocs = function() {
           if ( console && console.log ) {
             console.log( "Data back from pushtogithub:", data );
             if (data && data.success) {
+              // success
               $('.ajax-results').html(data.desc + "<br><br>" + "<pre>" + data.log + "</pre>");
             } else {
-              // error
+              // error 
               $('.ajax-results').html("<pre>ERROR:" + JSON.stringify(data, null, "\t") + "</pre>");
             }
           }
