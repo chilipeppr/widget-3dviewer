@@ -654,11 +654,11 @@ var generateWidgetDocs = function() {
       <button class="btn btn-xs btn-default btn-pushtogithub">Push to Github</button>
       <button class="btn btn-xs btn-default btn-pullfromgithub">Pull from Github</button>
       <button class="btn btn-xs btn-default btn-mergetemplate">Merge the ChiliPeppr Template to this Repo</button>
-      <div class="hidden well ajax-results">
+      <div class="hidden well ajax-results" style="padding-bottom:0;">
         Results
       </div>
       
-      <h1 class="page-header" style="margin-top:0;">$pubsub-id</h1>
+      <h1 class="page-header" style="margin-top:10px;">$pubsub-id</h1>
       
       <p>$pubsub-desc</p>
 
