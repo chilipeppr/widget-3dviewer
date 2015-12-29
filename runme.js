@@ -959,6 +959,7 @@ var getGithubUrl = function(callback) {
     };
   }
   else {
+    console.log('Unable to find ' + path + '. Please call "git pull" in your workspace!');
     return null;
   }
 

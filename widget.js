@@ -1,3 +1,5 @@
+/*global requirejs cprequire cpdefine chilipeppr THREE*/
+// ignore this errormessage:
 // ChiliPeppr Widget/Element Javascript
 
 requirejs.config({
