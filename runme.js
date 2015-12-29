@@ -525,6 +525,24 @@ var generateWidgetDocs = function() {
     
     <style type='text/css'>
     </style>
+    
+    <script type='text/javascript'>
+      //<![CDATA[
+      
+      function ajaxPushToGithub() {
+        $.ajax({
+          url: "pushtogithub"
+        })
+        .done(function( data ) {
+          if ( console && console.log ) {
+            console.log( "Data back from pushtogithub:", data );
+          }
+        });
+      }
+      
+      //]]>
+    </script>
+    
     </head>
     <body style="padding:20px;">
     
