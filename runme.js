@@ -64,7 +64,23 @@ http.createServer(function(req, res) {
       'Content-Type': 'application/json'
     });
     res.end(JSON.stringify(json));
+  }    
+  else if (uri == "/pullfromgithub") {
     
+    console.log("/pullfromgithub called");
+    
+    var stdout = pullFromGithubSync();
+    
+    var json = {
+      success: true,
+      desc: "Pulled from Github",
+      log: stdout
+    }
+    
+    res.writeHead(200, {
+      'Content-Type': 'application/json'
+    });
+    res.end(JSON.stringify(json));
     
   } else {
 
@@ -929,8 +945,11 @@ var pushToGithubSync = function() {
   // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
   // git push
   var stdout = "";
+  stdout += "> git add *\n";
   stdout += proc.execSync('git add *', { encoding: 'utf8' });
+  stdout += '> git commit -m "Made some changes to ChiliPeppr widget using Cloud9"\n';
   stdout += proc.execSync('git commit -m \"Made\ some\ changes\ to\ ChiliPeppr\ widget\ using\ Cloud9\"', { encoding: 'utf8' });
+  stdout += "> git push\n";
   stdout += proc.execSync('git push', { encoding: 'utf8' });
   console.log("Pushed to github sync. Stdout:", stdout);
   
@@ -953,6 +972,20 @@ var pushToGithubAsync = function() {
     });
   });
   console.log("Pushed to github");
+}
+
+var pullFromGithubSync = function() {
+  var proc = require('child_process');
+  
+  // git add *
+  // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
+  // git push
+  var stdout = "";
+  stdout += "> git pull\n"
+  stdout += proc.execSync('git pull', { encoding: 'utf8' });
+  console.log("Pulled from github sync. Stdout:", stdout);
+  
+  return stdout;
 }
 
 var generateInlinedFile = function() {
