@@ -576,8 +576,29 @@ var generateWidgetDocs = function() {
         });
       }
       
+      function ajaxPullFromGithub() {
+        console.log("pushing to github...");
+        $('.ajax-results').html("Pulling your changes from Github");
+        $.ajax({
+          url: "pullfromgithub"
+        })
+        .done(function( data ) {
+          if ( console && console.log ) {
+            console.log( "Data back from pushtogithub:", data );
+            if (data && data.success) {
+              // success
+              $('.ajax-results').html(data.desc + "<br><br>" + "<pre>" + data.log + "</pre>");
+            } else {
+              // error 
+              $('.ajax-results').html("<pre>ERROR:" + JSON.stringify(data, null, "\t") + "</pre>");
+            }
+          }
+        });
+      }
+      
       function init() {
         $('.btn-pushtogithub').click(ajaxPushToGithub);
+        $('.btn-pullfromgithub').click(ajaxPullFromGithub);
         console.log("Init complete");
       }
       
@@ -956,25 +977,6 @@ var pushToGithubSync = function() {
   stdout += '> git commit -m "Made some changes to ChiliPeppr widget using Cloud9"\n';
   stdout += "> git push\n";
   stdout += proc.execSync('git add *; git commit -m \"Changes made in Cloud9\"; git push;', { encoding: 'utf8' });
-  console.log("Pushed to github sync. Stdout:", stdout);
-  
-  return stdout;
-}
-
-var pushToGithubSyncOld = function() {
-  var proc = require('child_process');
-  
-  // git add *
-  // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
-  // git push
-  var stdout = "";
-  stdout += "> git add *\n";
-  stdout += proc.execSync('git add *', { encoding: 'utf8' });
-  stdout += '> git commit -m "Made some changes to ChiliPeppr widget using Cloud9"\n';
-  stdout += proc.execSync('bash -c "git commit -m \"Changes made in Cloud9\""', { encoding: 'utf8' });
-  stdout += "> git push\n";
-  var stdout3 = proc.execSync('git push', { encoding: 'utf8' });
-  stdout += stdout3;
   console.log("Pushed to github sync. Stdout:", stdout);
   
   return stdout;
