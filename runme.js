@@ -25,6 +25,8 @@ var mimeTypes = {
 
 http.createServer(function(req, res) {
 
+  console.log("URL being requested:", req.url);
+  
   var uri = url.parse(req.url).pathname;
   var filename = path.join(process.cwd(), unescape(uri));
   var stats;
