@@ -554,6 +554,7 @@ var generateWidgetDocs = function() {
       
       function init() {
         $('btn-pushtogithub').click(ajaxPushToGithub);
+        console.log("Init complete");
       }
       
       init();
