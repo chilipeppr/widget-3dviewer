@@ -25,35 +25,10 @@ var mimeTypes = {
 
 http.createServer(function(req, res) {
 
-  console.log("URL being requested:", req.url);
-  
   var uri = url.parse(req.url).pathname;
-  var filename = path.join(process.cwd(), unescape(uri));
-  var stats;
-
-  try {
-    stats = fs.lstatSync(filename); // throws if path doesn't exist
-  }
-  catch (e) {
-    res.writeHead(404, {
-      'Content-Type': 'text/plain'
-    });
-    res.write('404 Not Found\n');
-    res.end();
-    return;
-  }
-
-  if (stats.isFile()) {
-    // path exists, is a file
-    var mimeType = mimeTypes[path.extname(filename).split(".").reverse()[0]];
-    res.writeHead(200, {
-      'Content-Type': mimeType
-    });
-
-    var fileStream = fs.createReadStream(filename);
-    fileStream.pipe(res);
-  }
-  else if (uri == "/") {
+  console.log("URL being requested:", req.url, "uri:", uri);
+  
+  if (uri == "/") {
 
     res.writeHead(200, {
       'Content-Type': 'text/html'
@@ -70,7 +45,8 @@ http.createServer(function(req, res) {
 
     res.end(html);
 
-  } else if (uri == "/pushtogithub") {
+  } 
+  else if (uri == "/pushtogithub") {
     
     console.log("/pushtogithub called");
     var stdout = pushToGithubSync()
@@ -86,26 +62,53 @@ http.createServer(function(req, res) {
     });
     res.end(JSON.stringify(json));
     
-  }
-  else if (stats.isDirectory()) {
-    // path exists, is a directory
-    res.writeHead(200, {
-      'Content-Type': 'text/plain'
-    });
-    res.write('Index of ' + uri + '\n');
-    res.write('TODO, show index?\n');
-    res.end();
-  }
-  else {
-    // Symbolic link, other?
-    // TODO: follow symlinks?  security?
-    res.writeHead(500, {
-      'Content-Type': 'text/plain'
-    });
-    res.write('500 Internal server error\n');
-    res.end();
-  }
+  } else {
 
+    var filename = path.join(process.cwd(), unescape(uri));
+    var stats;
+  
+    try {
+      stats = fs.lstatSync(filename); // throws if path doesn't exist
+    }
+    catch (e) {
+      res.writeHead(404, {
+        'Content-Type': 'text/plain'
+      });
+      res.write('404 Not Found\n');
+      res.end();
+      return;
+    }
+  
+    if (stats.isFile()) {
+      // path exists, is a file
+      var mimeType = mimeTypes[path.extname(filename).split(".").reverse()[0]];
+      res.writeHead(200, {
+        'Content-Type': mimeType
+      });
+  
+      var fileStream = fs.createReadStream(filename);
+      fileStream.pipe(res);
+    }
+    else if (stats.isDirectory()) {
+      // path exists, is a directory
+      res.writeHead(200, {
+        'Content-Type': 'text/plain'
+      });
+      res.write('Index of ' + uri + '\n');
+      res.write('TODO, show index?\n');
+      res.end();
+    }
+    else {
+      // Symbolic link, other?
+      // TODO: follow symlinks?  security?
+      res.writeHead(500, {
+        'Content-Type': 'text/plain'
+      });
+      res.write('500 Internal server error\n');
+      res.end();
+    }
+    
+  }
 
 }).listen(process.env.PORT);
 
