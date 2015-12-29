@@ -658,7 +658,7 @@ var generateWidgetDocs = function() {
         Results
       </div>
       
-      <h1 class="page-header" style="margin-top:10px;">$pubsub-id</h1>
+      <h1 class="page-header" style="margin-top:20px;">$pubsub-id</h1>
       
       <p>$pubsub-desc</p>
 
