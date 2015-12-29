@@ -938,15 +938,28 @@ var getGithubUrl = function(callback) {
   // read the git repo meta data to figure this out
   var url = "";
   var path = ".git/FETCH_HEAD";
+  
 
   if (fs.existsSync(path)) {
 
     var data = fs.readFileSync(path).toString();
+
+    // test data
+    data = "99b78fc488c3874b40ecf0df4030a0d2747276aa                branch 'master' of https://github.com/xpix/chilipeppr-calibrate-widget\n";
+
     //console.log("git url:", data);
     data = data.replace(/[\r\n]/g, "");
 
-    var re = /.*github.com:/;
+    // handle situations where FETCH_HEAD looks like
+    // 61327dc3e756d101a6dc10526d6788e0c6602da9        not-for-merge   branch 'master' of github.com:chilipeppr/com-chilipeppr-widget-template
+    var re = /.*github.com:/i;
     var url = data.replace(re, "");
+    
+    // handle situations where FETCH_HEAD looks like
+    // 99b78fc488c3874b40ecf0df4030a0d2747276aa                branch 'master' of https://github.com/xpix/chilipeppr-calibrate-widget
+    re = /.*https\:\/\/github\.com\//i;   
+    url = data.replace(re, "");
+    
     url = "http://github.com/" + url;
     //console.log("final url:", url);
     
