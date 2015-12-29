@@ -539,6 +539,7 @@ var generateWidgetDocs = function() {
           }
         });
       }
+      ajaxPushToGithub();
       
       //]]>
     </script>
