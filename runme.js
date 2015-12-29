@@ -654,7 +654,7 @@ var generateWidgetDocs = function() {
       <button class="btn btn-xs btn-default btn-pushtogithub">Push to Github</button>
       <button class="btn btn-xs btn-default btn-pullfromgithub">Pull from Github</button>
       <button class="btn btn-xs btn-default btn-mergetemplate">Merge the ChiliPeppr Template to this Repo</button>
-      <div class="hidden well ajax-results" style="padding-bottom:0;">
+      <div class="hidden well ajax-results" style="margin-bottom:0;">
         Results
       </div>
       
