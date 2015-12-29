@@ -904,9 +904,14 @@ var pushToGithub = function() {
 
 var pushToGithubSync = function() {
   var proc = require('child_process');
-  var cmd = './git-push.sh';
-
-  var stdout = proc.execSync(cmd, { encoding: 'utf8' });
+  
+  // git add *
+  // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
+  // git push
+  var stdout = "";
+  stdout += proc.execSync('git add *', { encoding: 'utf8' });
+  stdout += proc.execSync('git commit -m "Made some changes to ChiliPeppr widget using Cloud9"', { encoding: 'utf8' });
+  stdout += proc.execSync('git push', { encoding: 'utf8' });
   console.log("Pushed to github sync. Stdout:", stdout);
   
   return stdout;
