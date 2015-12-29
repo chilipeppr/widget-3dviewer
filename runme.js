@@ -82,6 +82,24 @@ http.createServer(function(req, res) {
     });
     res.end(JSON.stringify(json));
     
+  }    
+  else if (uri == "/mergeFromCpTemplateRepo") {
+    
+    console.log("/mergeFromCpTemplateRepo called");
+    
+    var stdout = mergeFromCpTemplateRepo();
+    
+    var json = {
+      success: true,
+      desc: "Merged the latest ChiliPeppr Template to this repo. Please check for merge conflicts. You can run \"git status\" for a summary of conflicts, if any.",
+      log: stdout
+    }
+    
+    res.writeHead(200, {
+      'Content-Type': 'application/json'
+    });
+    res.end(JSON.stringify(json));
+    
   } else {
 
     var filename = path.join(process.cwd(), unescape(uri));
@@ -596,9 +614,30 @@ var generateWidgetDocs = function() {
         });
       }
       
+      function ajaxMergeFromCpTemplateRepo() {
+        console.log("ajaxMergeFromCpTemplateRepo to github...");
+        $('.ajax-results').html("Merging the latest changes (if any) from the ChiliPeppr Template to your fork");
+        $.ajax({
+          url: "mergeFromCpTemplateRepo"
+        })
+        .done(function( data ) {
+          if ( console && console.log ) {
+            console.log( "Data back from ajaxMergeFromCpTemplateRepo:", data );
+            if (data && data.success) {
+              // success
+              $('.ajax-results').html(data.desc + "<br><br>" + "<pre>" + data.log + "</pre>");
+            } else {
+              // error 
+              $('.ajax-results').html("<pre>ERROR:" + JSON.stringify(data, null, "\t") + "</pre>");
+            }
+          }
+        });
+      }
+      
       function init() {
         $('.btn-pushtogithub').click(ajaxPushToGithub);
         $('.btn-pullfromgithub').click(ajaxPullFromGithub);
+        $('.btn-mergetemplate').click(ajaxMergeFromCpTemplateRepo);
         console.log("Init complete");
       }
       
@@ -614,7 +653,7 @@ var generateWidgetDocs = function() {
     
       <button class="btn btn-xs btn-default btn-pushtogithub">Push to Github</button>
       <button class="btn btn-xs btn-default btn-pullfromgithub">Pull from Github</button>
-      <button class="btn btn-xs btn-default btn-merge">Merge the Upstream Repo to Your Fork</button>
+      <button class="btn btn-xs btn-default btn-mergetemplate">Merge the ChiliPeppr Template to this Repo</button>
       <div class="xhidden well ajax-results">
         Results
       </div>
@@ -1007,13 +1046,27 @@ var pullFromGithubSync = function() {
   // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
   // git push
   var stdout = "";
-  stdout += "> git pull\n"
+  stdout += "> git pull\n";
   stdout += proc.execSync('git pull', { encoding: 'utf8' });
   console.log("Pulled from github sync. Stdout:", stdout);
   
   return stdout;
 }
 
+var mergeFromCpTemplateRepo = function() {
+  var proc = require('child_process');
+  
+  // git add *
+  // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
+  // git push
+  var stdout = "";
+  stdout += "> git checkout master\n";
+  stdout += "> git pull https://github.com/chilipeppr/com-chilipeppr-widget-template.git\n";
+  stdout += proc.execSync('git checkout master; git pull https://github.com/chilipeppr/com-chilipeppr-widget-template.git', { encoding: 'utf8' });
+  console.log("Pulled from github sync. Stdout:", stdout);
+  
+  return stdout;
+}
 var generateInlinedFile = function() {
   // We are developing a widget with 3 main files of css, html, and js
   // but ChiliPeppr really wants one monolithic file so we have to generate
