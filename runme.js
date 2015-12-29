@@ -540,6 +540,7 @@ var generateWidgetDocs = function() {
       $(function() {
       
       function ajaxPushToGithub() {
+        console.log("pushing to github...");
         $('.ajax-results').html("Pushing your changes to Github");
         $.ajax({
           //url: "pushtogithub"
