@@ -910,7 +910,7 @@ var pushToGithubSync = function() {
   // git push
   var stdout = "";
   stdout += proc.execSync('git add *', { encoding: 'utf8' });
-  stdout += proc.execSync('git commit -m Made\ some\ changes\ to\ ChiliPeppr\ widget\ using\ Cloud9', { encoding: 'utf8' });
+  stdout += proc.execSync('git commit -m \"Made\ some\ changes\ to\ ChiliPeppr\ widget\ using\ Cloud9\"', { encoding: 'utf8' });
   stdout += proc.execSync('git push', { encoding: 'utf8' });
   console.log("Pushed to github sync. Stdout:", stdout);
   
