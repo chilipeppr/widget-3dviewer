@@ -40,7 +40,8 @@ http.createServer(function(req, res) {
     html += "<p>Generated a new README.md file...</p>";
     generateInlinedFile();
     html += "<p>Generated a new auto-generated-widget.html file...</p>";
-    pushToGithub();
+    //pushToGithub();
+    pushToGithubSync();
     html += "<p>Pushed updates to Github...</p>";
 
     res.end(html);
@@ -49,6 +50,7 @@ http.createServer(function(req, res) {
   else if (uri == "/pushtogithub") {
     
     console.log("/pushtogithub called");
+    /*
     var stdout = pushToGithubSync()
     
     var json = {
@@ -61,6 +63,7 @@ http.createServer(function(req, res) {
       'Content-Type': 'application/json'
     });
     res.end(JSON.stringify(json));
+    */
     
   } else {
 
@@ -915,6 +918,24 @@ var pushToGithubSync = function() {
   console.log("Pushed to github sync. Stdout:", stdout);
   
   return stdout;
+}
+
+var pushToGithubAsync = function() {
+  var exec = require('child_process').execFile;
+
+  exec('git add *', null, null, function(error, stdout, stderr) {
+    // command output is in stdout
+    console.log("stdout:", stdout, "stderr:", stderr);
+    exec('git commit -m "Changes made in Cloud9"', null, null, function(error, stdout, stderr) {
+      // command output is in stdout
+      console.log("stdout:", stdout, "stderr:", stderr);
+      exec('git push', null, null, function(error, stdout, stderr) {
+        // command output is in stdout
+        console.log("stdout:", stdout, "stderr:", stderr);
+      });
+    });
+  });
+  console.log("Pushed to github");
 }
 
 var generateInlinedFile = function() {
