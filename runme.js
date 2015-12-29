@@ -549,7 +549,7 @@ var generateWidgetDocs = function() {
         .done(function( data ) {
           if ( console && console.log ) {
             console.log( "Data back from pushtogithub:", data );
-            $('.ajax-results').html(data)
+            $('.ajax-results').html("<pre>" + JSON.stringify(data, null, "\t") + "</pre>");
           }
         });
       }
