@@ -537,7 +537,7 @@ var generateWidgetDocs = function() {
     <script type='text/javascript'>
       //<![CDATA[
       
-      $(
+      $(function() {
       
       function ajaxPushToGithub() {
         $('.ajax-results').html("Pushing your changes to Github");
@@ -558,7 +558,7 @@ var generateWidgetDocs = function() {
       
       init();
       
-      );
+      });
       
       //]]>
     </script>
@@ -1052,7 +1052,7 @@ var getGithubUrl = function(callback) {
   var cmd = 'git config --get remote.origin.url';
 
   var stdout = childproc.execSync(cmd, { encoding: 'utf8' });
-  console.log("Got the following Github URL:", stdout);
+  //console.log("Got the following Github URL:", stdout);
 
   var re = /.*github.com:/i;
   var url = stdout.replace(re, "");
