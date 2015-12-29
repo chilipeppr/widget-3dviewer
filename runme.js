@@ -41,7 +41,8 @@ http.createServer(function(req, res) {
     generateInlinedFile();
     html += "<p>Generated a new auto-generated-widget.html file...</p>";
     //pushToGithub();
-    pushToGithubSync();
+    //pushToGithubSync();
+    pushToGithubAsync();
     html += "<p>Pushed updates to Github...</p>";
 
     res.end(html);
@@ -50,7 +51,7 @@ http.createServer(function(req, res) {
   else if (uri == "/pushtogithub") {
     
     console.log("/pushtogithub called");
-    /*
+    
     var stdout = pushToGithubSync()
     
     var json = {
@@ -63,7 +64,7 @@ http.createServer(function(req, res) {
       'Content-Type': 'application/json'
     });
     res.end(JSON.stringify(json));
-    */
+    
     
   } else {
 
@@ -543,7 +544,7 @@ var generateWidgetDocs = function() {
         console.log("pushing to github...");
         $('.ajax-results').html("Pushing your changes to Github");
         $.ajax({
-          //url: "pushtogithub"
+          url: "pushtogithub"
         })
         .done(function( data ) {
           if ( console && console.log ) {
@@ -554,7 +555,7 @@ var generateWidgetDocs = function() {
       }
       
       function init() {
-        $('btn-pushtogithub').click(ajaxPushToGithub);
+        $('.btn-pushtogithub').click(ajaxPushToGithub);
         console.log("Init complete");
       }
       
