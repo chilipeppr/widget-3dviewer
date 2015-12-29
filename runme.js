@@ -68,6 +68,22 @@ http.createServer(function(req, res) {
 
     res.end(html);
 
+  } else if (uri == "/pushtogithub") {
+    
+    console.log("/pushtogithub called");
+    var stdout = pushToGithubSync()
+    
+    var json = {
+      success: true,
+      desc: "Pushed to Github",
+      log: stdout
+    }
+    
+    res.writeHead(200, {
+      'Content-Type': 'application/json'
+    });
+    res.end(JSON.stringify(json));
+    
   }
   else if (stats.isDirectory()) {
     // path exists, is a directory
@@ -856,6 +872,16 @@ var pushToGithub = function() {
     console.log("stdout:", stdout);
   });
   console.log("Pushed to github");
+}
+
+var pushToGithubSync = function() {
+  var proc = require('child_process');
+  var cmd = './git-push.sh';
+
+  var stdout = proc(cmd, { encoding: 'utf8' });
+  console.log("Pushed to github sync. Stdout:", stdout);
+  
+  return stdout;
 }
 
 var generateInlinedFile = function() {
