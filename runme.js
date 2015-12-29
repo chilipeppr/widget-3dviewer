@@ -902,7 +902,7 @@ var pushToGithubSync = function() {
   var proc = require('child_process');
   var cmd = './git-push.sh';
 
-  var stdout = proc(cmd, { encoding: 'utf8' });
+  var stdout = proc.execSync(cmd, { encoding: 'utf8' });
   console.log("Pushed to github sync. Stdout:", stdout);
   
   return stdout;
