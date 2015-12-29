@@ -26,7 +26,7 @@ var mimeTypes = {
 http.createServer(function(req, res) {
 
   var uri = url.parse(req.url).pathname;
-  console.log("URL being requested:", req.url, "uri:", uri);
+  console.log("URL being requested:", uri);
   
   if (uri == "/") {
 
@@ -160,7 +160,7 @@ var evalWidgetJs = function() {
   var github = getGithubUrl();
 
   var reUrl = /(url\s*:\s*['"]?)\(auto fill by runme\.js\)/;
-  console.log("reUrl:", reUrl);
+  //console.log("reUrl:", reUrl);
   widgetSrc = widgetSrc.replace(reUrl, "$1" + github.rawurl);
   widgetSrc = widgetSrc.replace(/(fiddleurl\s*:\s*['"]?)\(auto fill by runme\.js\)/, "$1" + editUrl);
   widgetSrc = widgetSrc.replace(/(githuburl\s*:\s*['"]?)\(auto fill by runme\.js\)/, "$1" + github.url);
@@ -170,7 +170,7 @@ var evalWidgetJs = function() {
   //fs.writeFileSync('widget.js', widgetSrc);
   
   eval(widgetSrc);
-  console.log("evaled the widget.js");
+  //console.log("evaled the widget.js");
   //isEvaled = true;
   
   // generate docs
@@ -332,7 +332,7 @@ cpdefine = function(myid, mydeps, callback) {
   widget = callback();
   id = myid;
   deps = mydeps;
-  console.log("cool, our own cpdefine got called. id:", id, "deps:", deps);
+  //console.log("cool, our own cpdefine got called. id:", id, "deps:", deps);
 }
 // define other top-level methods just to avoid errors
 requirejs = function() {}
@@ -956,24 +956,25 @@ var pushToGithubSync = function() {
   stdout += '> git commit -m "Made some changes to ChiliPeppr widget using Cloud9"\n';
   stdout += proc.execSync('git commit -m \"Made\ some\ changes\ to\ ChiliPeppr\ widget\ using\ Cloud9\"', { encoding: 'utf8' });
   stdout += "> git push\n";
-  stdout += proc.execSync('git push', { encoding: 'utf8' });
+  var stdout3 = proc.execSync('git push', { encoding: 'utf8' });
+  stdout += stdout3;
   console.log("Pushed to github sync. Stdout:", stdout);
   
   return stdout;
 }
 
 var pushToGithubAsync = function() {
-  var exec = require('child_process').execFile;
+  var exec = require('child_process').exec;
 
-  exec('git add *', null, null, function(error, stdout, stderr) {
+  exec('git add *', function(error1, stdout1, stderr1) {
     // command output is in stdout
-    console.log("stdout:", stdout, "stderr:", stderr);
-    exec('git commit -m "Changes made in Cloud9"', null, null, function(error, stdout, stderr) {
+    console.log("stdout:", stdout1, "stderr:", stderr1);
+    exec('git commit -m "Changes made in Cloud9"', function(error2, stdout2, stderr2) {
       // command output is in stdout
-      console.log("stdout:", stdout, "stderr:", stderr);
-      exec('git push', null, null, function(error, stdout, stderr) {
+      console.log("stdout:", stdout2, "stderr:", stderr2);
+      exec('git push', function(error3, stdout3, stderr3) {
         // command output is in stdout
-        console.log("stdout:", stdout, "stderr:", stderr);
+        console.log("stdout:", stdout3, "stderr:", stderr3);
       });
     });
   });
