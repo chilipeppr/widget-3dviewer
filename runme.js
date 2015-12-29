@@ -725,6 +725,9 @@ var generateWidgetDocs = function() {
   var widgetUrl = 'http://' +
     process.env.C9_PROJECT + '-' + process.env.C9_USER +
     '.c9users.io/widget.html';
+  var testUrl = 'https://preview.c9users.io/' +
+    process.env.C9_USER + '/' +
+    process.env.C9_PROJECT + '/widget.html';
   var editUrl = 'http://ide.c9.io/' +
     process.env.C9_USER + '/' +
     process.env.C9_PROJECT;
@@ -736,7 +739,7 @@ var generateWidgetDocs = function() {
   html = html.replace(/\$pubsub-url/g, github.rawurl);
   html = html.replace(/\$pubsub-fiddleurl/g, editUrl);
   html = html.replace(/\$pubsub-github/g, github.url);
-  html = html.replace(/\$pubsub-testurl/g, widgetUrl);
+  html = html.replace(/\$pubsub-testurl/g, testUrl);
   
   var cpload = generateCpLoadStmt();
   html = html.replace(/\$cp-load-stmt/g, cpload);
