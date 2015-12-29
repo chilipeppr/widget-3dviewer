@@ -576,7 +576,7 @@ var generateWidgetDocs = function() {
       
       function ajaxPushToGithub() {
         console.log("pushing to github...");
-        $('.ajax-results').html("Pushing your changes to Github");
+        $('.ajax-results').removeClass('hidden').html("Pushing your changes to Github");
         $.ajax({
           url: "pushtogithub"
         })
@@ -596,7 +596,7 @@ var generateWidgetDocs = function() {
       
       function ajaxPullFromGithub() {
         console.log("pushing to github...");
-        $('.ajax-results').html("Pulling your changes from Github");
+        $('.ajax-results').removeClass('hidden').html("Pulling your changes from Github");
         $.ajax({
           url: "pullfromgithub"
         })
@@ -616,7 +616,7 @@ var generateWidgetDocs = function() {
       
       function ajaxMergeFromCpTemplateRepo() {
         console.log("ajaxMergeFromCpTemplateRepo to github...");
-        $('.ajax-results').html("Merging the latest changes (if any) from the ChiliPeppr Template to your fork");
+        $('.ajax-results').removeClass('hidden').html("Merging the latest changes (if any) from the ChiliPeppr Template to your fork");
         $.ajax({
           url: "mergeFromCpTemplateRepo"
         })
@@ -654,7 +654,7 @@ var generateWidgetDocs = function() {
       <button class="btn btn-xs btn-default btn-pushtogithub">Push to Github</button>
       <button class="btn btn-xs btn-default btn-pullfromgithub">Pull from Github</button>
       <button class="btn btn-xs btn-default btn-mergetemplate">Merge the ChiliPeppr Template to this Repo</button>
-      <div class="xhidden well ajax-results">
+      <div class="hidden well ajax-results">
         Results
       </div>
       
