@@ -958,7 +958,7 @@ var getGithubUrl = function(callback) {
     // handle situations where FETCH_HEAD looks like
     // 99b78fc488c3874b40ecf0df4030a0d2747276aa                branch 'master' of https://github.com/xpix/chilipeppr-calibrate-widget
     re = /.*https\:\/\/github\.com\//i;   
-    url = data.replace(re, "");
+    url = url.replace(re, "");
     
     url = "http://github.com/" + url;
     //console.log("final url:", url);
