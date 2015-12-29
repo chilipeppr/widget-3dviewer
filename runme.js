@@ -544,10 +544,16 @@ var generateWidgetDocs = function() {
         .done(function( data ) {
           if ( console && console.log ) {
             console.log( "Data back from pushtogithub:", data );
+            $('.ajax-results').html(data)
           }
         });
       }
-      ajaxPushToGithub();
+      
+      function init() {
+        $('btn-pushtogithub').click(ajaxPushToGithub);
+      }
+      
+      init();
       
       //]]>
     </script>
@@ -556,9 +562,12 @@ var generateWidgetDocs = function() {
     <body style="padding:20px;">
     
       <button class="btn btn-xs btn-default btn-pushtogithub">Push to Github</button>
-      <button class="btn btn-xs btn-default btn-pushtogithub">Pull from Github</button>
-      <button class="btn btn-xs btn-default btn-pushtogithub">Merge the Upstream Repo to Your Fork</button>
-    
+      <button class="btn btn-xs btn-default btn-pullfromgithub">Pull from Github</button>
+      <button class="btn btn-xs btn-default btn-merge">Merge the Upstream Repo to Your Fork</button>
+      <div class="xhidden well ajax-results">
+        Results
+      </div>
+      
       <h1 class="page-header" style="margin-top:0;">$pubsub-id</h1>
       
       <p>$pubsub-desc</p>
@@ -1055,7 +1064,7 @@ var getGithubUrl = function(callback) {
     rawurl : rawurl
   };
   
-  console.log("ret:", ret);
+  //console.log("ret:", ret);
   return ret;
     
   /*
