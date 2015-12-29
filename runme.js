@@ -568,6 +568,7 @@ var generateWidgetDocs = function() {
             if (data && data.success) {
               $('.ajax-results').html(data.desc + "<br><br>" + "<pre>" + data.log + "</pre>");
             } else {
+              // error
               $('.ajax-results').html("<pre>ERROR:" + JSON.stringify(data, null, "\t") + "</pre>");
             }
           }
