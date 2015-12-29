@@ -969,7 +969,7 @@ var pushToGithubAsync = function() {
   exec('git add *', function(error1, stdout1, stderr1) {
     // command output is in stdout
     console.log("stdout:", stdout1, "stderr:", stderr1);
-    exec('git commit -m "Changes made in Cloud9"', function(error2, stdout2, stderr2) {
+    exec('bash -c "git commit -m \"Changes made in Cloud9\""', function(error2, stdout2, stderr2) {
       // command output is in stdout
       console.log("stdout:", stdout2, "stderr:", stderr2);
       exec('git push', function(error3, stdout3, stderr3) {
