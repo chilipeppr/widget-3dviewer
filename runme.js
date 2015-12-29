@@ -872,7 +872,7 @@ var generateInlinedFile = function() {
   if (widget) {
     var re = /<title><!--\(auto-fill by runme\.js--><\/title>/i;
     if (fileHtml.match(re)) {
-    fileHtml = fileHtml.replace(re, widget.name);
+    fileHtml = fileHtml.replace(re, "<title>" + widget.name + "</title>");
     console.log("Swapped in title for final HTML page.");
     } else {
       console.log('Went to swap in title, but the auto fill comment not found.');
