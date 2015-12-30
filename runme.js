@@ -1070,7 +1070,7 @@ var mergeFromCpTemplateRepo = function() {
   stdout += pushToGithubSync();
   stdout += "> git checkout master\n";
   stdout += "> git pull https://github.com/chilipeppr/com-chilipeppr-widget-template.git\n";
-  stdout += proc.execSync('git checkout master; git pull https://github.com/chilipeppr/com-chilipeppr-widget-template.git', { encoding: 'utf8' });
+  stdout += proc.execSync('git checkout master; git pull https://github.com/chilipeppr/widget-template.git', { encoding: 'utf8' });
   console.log("Pulled from github sync. Stdout:", stdout);
   
   return stdout;
