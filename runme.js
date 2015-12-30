@@ -37,19 +37,21 @@ http.createServer(function(req, res) {
     //var html = getMainPage();
     var htmlDocs = generateWidgetDocs();
     
-    var html = "";
+    var notes = "";
+    notes += "<p>Click refresh to regenerate README.md, auto-generated-widget.html, and push updates to Github.</p>";
     generateWidgetReadme();
-    html += "<p>Generated a new README.md file...</p>";
+    notes += "<p>Generated a new README.md file...</p>";
     generateInlinedFile();
-    html += "<p>Generated a new auto-generated-widget.html file...</p>";
+    notes += "<p>Generated a new auto-generated-widget.html file...</p>";
     //pushToGithub();
     //pushToGithubSync();
     pushToGithubAsync();
-    html += "<p>Pushed updates to Github...</p>";
+    notes += "<p>Pushed updates to Github...</p>";
 
-    html = html + htmlDocs;
+    //html = html + htmlDocs;
+    var finalHtml = htmlDocs.replace(/<!-- pre-notes -->/, notes);
     
-    res.end(html);
+    res.end(finalHtml);
 
   } 
   else if (uri == "/pushtogithub") {
@@ -740,6 +742,8 @@ var generateWidgetDocs = function() {
     </head>
     <body style="padding:20px;">
     
+      <!-- pre-notes -->
+      
       <button class="btn btn-xs btn-default btn-pushtogithub">Push to Github</button>
       <button class="btn btn-xs btn-default btn-pullfromgithub">Pull from Github</button>
       <button class="btn btn-xs btn-default btn-mergetemplate">Merge the ChiliPeppr Template to this Repo</button>
