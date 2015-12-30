@@ -1169,7 +1169,12 @@ var mergeFromCpTemplateRepo = function() {
   stdout += pushToGithubSync();
   stdout += "> git checkout master\n";
   stdout += "> git pull https://github.com/chilipeppr/widget-template.git\n";
-  stdout += proc.execSync('git checkout master; git pull https://github.com/chilipeppr/widget-template.git', { encoding: 'utf8' });
+  try {
+    stdout += proc.execSync('git checkout master; git pull https://github.com/chilipeppr/widget-template.git', { encoding: 'utf8' });
+  } catch (ex) {
+    console.log("error on merge:", ex);
+    stdout += "Tiny little error on merge.\n";
+  }
   console.log("Pulled from github sync. Stdout:", stdout);
   
   return stdout;
