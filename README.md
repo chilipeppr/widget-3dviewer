@@ -17,7 +17,7 @@ not conflict with other ChiliPeppr widgets.
 | chilipeppr.load() URL | http://raw.githubusercontent.com/chilipeppr/com-chilipeppr-widget-template/master/auto-generated-widget.html |
 | Edit URL              | http://ide.c9.io/chilipeppr/com-chilipeppr-widget-template |
 | Github URL            | http://github.com/chilipeppr/com-chilipeppr-widget-template |
-| Test URL              | http://com-chilipeppr-widget-template-chilipeppr.c9users.io/widget.html |
+| Test URL              | https://preview.c9users.io/chilipeppr/com-chilipeppr-widget-template/widget.html |
 
 ## Example Code for chilipeppr.load() Statement
 
