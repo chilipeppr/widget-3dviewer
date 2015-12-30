@@ -1067,6 +1067,7 @@ var mergeFromCpTemplateRepo = function() {
   // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
   // git push
   var stdout = "";
+  stdout += pushToGithubSync();
   stdout += "> git checkout master\n";
   stdout += "> git pull https://github.com/chilipeppr/com-chilipeppr-widget-template.git\n";
   stdout += proc.execSync('git checkout master; git pull https://github.com/chilipeppr/com-chilipeppr-widget-template.git', { encoding: 'utf8' });
