@@ -211,9 +211,11 @@ var evalWidgetJs = function() {
     
     if (typeof obj === 'function') {
 
+      // grab first line of source code
       var srcFirstLine = obj.toString().substring(0, obj.toString().indexOf("\n"));
       // drop {
       srcFirstLine = srcFirstLine.replace(/\{/, "");
+      //srcFirstLine = srcFirstLine.replace(/function\s*\(\s*\)\s*\{/, "");
       objDoc.descHtml = srcFirstLine; // + "<br><br>";
       objDoc.descMd = srcFirstLine; // + "\n\n";
       
@@ -406,44 +408,96 @@ This widget/element publishes the following signals. These signals are owned by 
 chilipeppr.subscribe(signal, callback) method. 
 To better understand how ChiliPeppr's subscribe() method works see amplify.js's documentation at http://amplifyjs.com/api/pubsub/
 
-| Signal | Description |
-| ------ | ----------- |
-$widget-publish
+  <table id="com-chilipeppr-elem-pubsubviewer-pub" class="table table-bordered table-striped">
+      <thead>
+          <tr>
+              <th style="">Signal</th>
+              <th style="">Description</th>
+          </tr>
+      </thead>
+      <tbody>
+      $row-publish-start    
+      <tr valign="top"><td colspan="2">(No signals defined in this widget/element)</td></tr>
+      $row-publish-end    
+      </tbody>
+  </table>
 
 ## Subscribe
 
 This widget/element subscribes to the following signals. These signals are owned by this widget/element. Other objects inside the ChiliPeppr environment can publish to these signals via the chilipeppr.publish(signal, data) method. 
 To better understand how ChiliPeppr's publish() method works see amplify.js's documentation at http://amplifyjs.com/api/pubsub/
 
-| Signal | Description |
-| ------ | ----------- |
-$widget-subscribe
+  <table id="com-chilipeppr-elem-pubsubviewer-sub" class="table table-bordered table-striped">
+      <thead>
+          <tr>
+              <th style="">Signal</th>
+              <th style="">Description</th>
+          </tr>
+      </thead>
+      <tbody>
+      $row-subscribe-start    
+      <tr valign="top"><td colspan="2">(No signals defined in this widget/element)</td></tr>
+      $row-subscribe-end    
+      </tbody>
+  </table>
 
 ## Foreign Publish
 
 This widget/element publishes to the following signals that are owned by other objects. 
 To better understand how ChiliPeppr's subscribe() method works see amplify.js's documentation at http://amplifyjs.com/api/pubsub/
 
-| Signal | Description |
-| ------ | ----------- |
-$widget-foreignpublish
+  <table id="com-chilipeppr-elem-pubsubviewer-foreignpub" class="table table-bordered table-striped">
+      <thead>
+          <tr>
+              <th style="">Signal</th>
+              <th style="">Description</th>
+          </tr>
+      </thead>
+      <tbody>
+      $row-foreign-publish-start    
+      <tr><td colspan="2">(No signals defined in this widget/element)</td></tr>
+      $row-foreign-publish-end    
+      </tbody>
+  </table>
 
 ## Foreign Subscribe
 
 This widget/element publishes to the following signals that are owned by other objects.
 To better understand how ChiliPeppr's publish() method works see amplify.js's documentation at http://amplifyjs.com/api/pubsub/
 
-| Signal | Description |
-| ------ | ----------- |
-$widget-foreignsubscribe
+  <table id="com-chilipeppr-elem-pubsubviewer-foreignsub" class="table table-bordered table-striped">
+      <thead>
+          <tr>
+              <th style="">Signal</th>
+              <th style="">Description</th>
+          </tr>
+      </thead>
+      <tbody>
+      $row-foreign-subscribe-start    
+      <tr><td colspan="2">(No signals defined in this widget/element)</td></tr>
+      $row-foreign-subscribe-end    
+      </tbody>
+  </table>
 
 ## Methods / Properties
 
 The table below shows, in order, the methods and properties inside the widget/element.
 
-| Item                  | Type          | Description |
-| -------------         | ------------- | ----------- |
-$widget-methprops
+  <table id="com-chilipeppr-elem-methodsprops" class="table table-bordered table-striped">
+      <thead>
+          <tr>
+              <th style="">Method / Property</th>
+              <th>Type</th>
+              <th style="">Description</th>
+          </tr>
+      </thead>
+      <tbody>
+      $row-methods-start
+      <tr><td colspan="2">(No methods or properties defined in this widget/element)</td></tr>
+      $row-methods-end
+      </tbody>
+  </table>
+
 
 ## About ChiliPeppr
 
@@ -473,8 +527,6 @@ ChiliPeppr's Serial Port JSON Server is the basis for the
 [Arduino's new web IDE](https://create.arduino.cc/). If the Arduino team is excited about building on top
 of ChiliPeppr, what
 will you build on top of it?
-
-
 
 `
 
@@ -508,6 +560,7 @@ will you build on top of it?
   }
   md = md.replace(/\$widget-img/g, img);
 
+  /*
   // now generate methods/properties
   //$widget-methprops
   var s = "";
@@ -533,7 +586,36 @@ will you build on top of it?
   md = md.replace(/\$widget-foreignpublish/, s);
   s = appendKeyValForMarkdown(widget.foreignSubscribe);
   md = md.replace(/\$widget-foreignsubscribe/, s);
+  */
+  
+    // do the properties and methods
+  var s = "";
+  for (var key in widget) {
+    var txt = widgetDocs[key] + '';
+    // get rid of spaces and returns after closing pre tags cuz it messes up github markdown
+    txt = txt.replace(/<\/pre>[\s\r\n]*/ig, "</pre>");
+    // convert double newlines to <br><br> tags
+    txt = txt.replace(/\n\s*\n\s*/g, "<br><br>");
 
+    var obj = widget[key];
+    s += '<tr valign="top"><td>' + key +
+      '</td><td>' + typeof obj +
+      '</td><td>';
+    s += txt;
+    s += '</td></tr>';
+  }
+  md = md.replace(/\$row-methods-start[\s\S]+?\$row-methods-end/g, s);
+
+  // now do pubsub signals
+  var s;
+  s = appendKeyVal(widget.publish);
+  md = md.replace(/\$row-publish-start[\s\S]+?\$row-publish-end/, s);
+  s = appendKeyVal(widget.subscribe);
+  md = md.replace(/\$row-subscribe-start[\s\S]+?\$row-subscribe-end/g, s);
+  s = appendKeyVal(widget.foreignPublish);
+  md = md.replace(/\$row-foreign-publish-start[\s\S]+?\$row-foreign-publish-end/, s);
+  s = appendKeyVal(widget.foreignSubscribe);
+  md = md.replace(/\$row-foreign-subscribe-start[\s\S]+?\$row-foreign-subscribe-end/g, s);
 
   // now write out the auto-gen file
   fs.writeFileSync("README.md", md);
@@ -944,7 +1026,20 @@ var appendKeyVal = function(data, id) {
         
     //var keys = Object.keys(data);
     for (var key in data) {
-      str += '<tr><td>/' + widget.id + "" + key + '</td><td>' + data[key] + '</td></tr>';
+      
+      // clean up the description text
+      var txt = data[key] + '';
+      // get rid of spaces and returns after closing pre tags cuz it messes up github markdown
+      txt = txt.replace(/<\/pre>[\s\r\n]*/ig, "</pre>");
+      // convert double newlines to <br><br> tags
+      txt = txt.replace(/\n\s*\n\s*/g, "<br><br>");
+      
+      str += '<tr valign="top"><td>/' + 
+        widget.id + "" + 
+        key + 
+        '</td><td>' +
+        txt + 
+        '</td></tr>';
     }
   } else {
     str = '<tr><td colspan="2">(No signals defined in this widget/element)</td></tr>';
@@ -1069,7 +1164,7 @@ var mergeFromCpTemplateRepo = function() {
   var stdout = "";
   stdout += pushToGithubSync();
   stdout += "> git checkout master\n";
-  stdout += "> git pull https://github.com/chilipeppr/com-chilipeppr-widget-template.git\n";
+  stdout += "> git pull https://github.com/chilipeppr/widget-template.git\n";
   stdout += proc.execSync('git checkout master; git pull https://github.com/chilipeppr/widget-template.git', { encoding: 'utf8' });
   console.log("Pulled from github sync. Stdout:", stdout);
   
