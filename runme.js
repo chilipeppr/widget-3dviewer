@@ -976,7 +976,7 @@ var generateCpLoadStmt = function() {
       '    // Callback after widget loaded into #myDivWidgetInsertedInto\n' +
       '    cprequire(\n' +
       //'      "inline:com-chilipeppr-widget-yourname", // the id you gave your widget\n' +
-      '      "' + id + '", // the id you gave your widget\n' +
+      '      ["' + id + '"], // the id you gave your widget\n' +
       '      function(mywidget) {\n' +
       '        // Callback that is passed reference to your newly loaded widget\n' +
       '        console.log("My widget just got loaded.", mywidget);\n' +
