@@ -477,6 +477,9 @@ will you build on top of it?
   var widgetUrl = 'http://' +
     process.env.C9_PROJECT + '-' + process.env.C9_USER +
     '.c9users.io/widget.html';
+  var testUrl = 'https://preview.c9users.io/' +
+    process.env.C9_USER + '/' +
+    process.env.C9_PROJECT + '/widget.html';
   var editUrl = 'http://ide.c9.io/' +
     process.env.C9_USER + '/' +
     process.env.C9_PROJECT;
@@ -488,7 +491,7 @@ will you build on top of it?
   md = md.replace(/\$widget-cpurl/g, github.rawurl);
   md = md.replace(/\$widget-editurl/g, editUrl);
   md = md.replace(/\$widget-giturl/g, github.url);
-  md = md.replace(/\$widget-testurl/g, widgetUrl);
+  md = md.replace(/\$widget-testurl/g, testUrl);
   
   var cpload = generateCpLoadStmt();
   md = md.replace(/\$widget-cploadjs/g, cpload);
