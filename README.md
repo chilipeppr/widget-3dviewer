@@ -1,5 +1,5 @@
 # com-chilipeppr-widget-template
-This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget.
+This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget. Make sure to run runme.js every time you are done editing your code so you can regenerate your README.md file, regenerate your auto-generated-widget.html, and automatically push your changes to Github.
 
 ![alt text](screenshot.png "Screenshot")
 
@@ -13,7 +13,7 @@ not conflict with other ChiliPeppr widgets.
 | -------------         | ------------- | 
 | ID                    | com-chilipeppr-widget-template |
 | Name                  | Widget / Template |
-| Description           | This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget. |
+| Description           | This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget. Make sure to run runme.js every time you are done editing your code so you can regenerate your README.md file, regenerate your auto-generated-widget.html, and automatically push your changes to Github. |
 | chilipeppr.load() URL | http://raw.githubusercontent.com/chilipeppr/widget-template/master/auto-generated-widget.html |
 | Edit URL              | http://ide.c9.io/chilipeppr/widget-template |
 | Github URL            | http://github.com/chilipeppr/widget-template |
@@ -91,7 +91,7 @@ The table below shows, in order, the methods and properties inside the widget/el
 | -------------         | ------------- | ----------- |
 | id | string | "com-chilipeppr-widget-template"<br><br>The ID of the widget. You must define this and make it unique. |
 | name | string | "Widget / Template" |
-| desc | string | "This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget." |
+| desc | string | "This example widget gives you a framework for creating your own widget. Please change this description once you fork this template and create your own widget. Make sure to run runme.js every time you are done editing your code so you can regenerate your README.md file, regenerate your auto-generated-widget.html, and automatically push your changes to Github." |
 | url | string | "http://raw.githubusercontent.com/chilipeppr/widget-template/master/auto-generated-widget.html" |
 | fiddleurl | string | "http://ide.c9.io/chilipeppr/widget-template" |
 | githuburl | string | "http://github.com/chilipeppr/widget-template" |
