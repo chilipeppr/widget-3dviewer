@@ -1067,6 +1067,18 @@ var mergeFromCpTemplateRepo = function() {
   
   return stdout;
 }
+
+var forkYourOwnRepo = function() {
+  /*
+  Go create a from-scratch repo on github called <newrepo>
+  Then...
+  git clone https://github.com/<username>/<newrepo>.git
+  git remote add upstream https://github.com/<username>/<oldrepo>.git
+  git pull upstream master
+  git push -u origin master
+  */
+}
+
 var generateInlinedFile = function() {
   // We are developing a widget with 3 main files of css, html, and js
   // but ChiliPeppr really wants one monolithic file so we have to generate
