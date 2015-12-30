@@ -35,7 +35,9 @@ http.createServer(function(req, res) {
     });
 
     //var html = getMainPage();
-    var html = generateWidgetDocs();
+    var htmlDocs = generateWidgetDocs();
+    
+    var html = "";
     generateWidgetReadme();
     html += "<p>Generated a new README.md file...</p>";
     generateInlinedFile();
@@ -45,6 +47,8 @@ http.createServer(function(req, res) {
     pushToGithubAsync();
     html += "<p>Pushed updates to Github...</p>";
 
+    html = html + htmlDocs;
+    
     res.end(html);
 
   } 
@@ -1018,7 +1022,7 @@ var pushToGithubSync = function() {
   stdout += "> git add *\n";
   stdout += '> git commit -m "Made some changes to ChiliPeppr widget using Cloud9"\n';
   stdout += "> git push\n";
-  stdout += proc.execSync('git add *; git commit -m \"Changes made in Cloud9\"; git push;', { encoding: 'utf8' });
+  stdout += proc.execSync('git add *; git commit -m \\"Made some changes to ChiliPeppr widget using Cloud9\\"; git push;', { encoding: 'utf8' });
   console.log("Pushed to github sync. Stdout:", stdout);
   
   return stdout;
@@ -1030,7 +1034,7 @@ var pushToGithubAsync = function() {
   exec('git add *', function(error1, stdout1, stderr1) {
     // command output is in stdout
     console.log("stdout:", stdout1, "stderr:", stderr1);
-    exec('bash -c "git commit -m \"Changes made in Cloud9\""', function(error2, stdout2, stderr2) {
+    exec('bash -c "git commit -m \\"Made some changes to ChiliPeppr widget using Cloud9\\""', function(error2, stdout2, stderr2) {
       // command output is in stdout
       console.log("stdout:", stdout2, "stderr:", stderr2);
       exec('git push', function(error3, stdout3, stderr3) {
@@ -1202,47 +1206,4 @@ var getGithubUrl = function(callback) {
   //console.log("ret:", ret);
   return ret;
     
-  /*
-  // read the git repo meta data to figure this out
-  var url = "";
-  var path = ".git/FETCH_HEAD";
-  
-
-  if (fs.existsSync(path)) {
-
-    var data = fs.readFileSync(path).toString();
-
-    // test data
-    //data = "99b78fc488c3874b40ecf0df4030a0d2747276aa                branch 'master' of https://github.com/xpix/chilipeppr-calibrate-widget\n";
-
-    //console.log("git url:", data);
-    data = data.replace(/[\r\n]/g, "");
-
-    // handle situations where FETCH_HEAD looks like
-    // 61327dc3e756d101a6dc10526d6788e0c6602da9        not-for-merge   branch 'master' of github.com:chilipeppr/com-chilipeppr-widget-template
-    var re = /.*github.com:/i;
-    var url = data.replace(re, "");
-    
-    // handle situations where FETCH_HEAD looks like
-    // 99b78fc488c3874b40ecf0df4030a0d2747276aa                branch 'master' of https://github.com/xpix/chilipeppr-calibrate-widget
-    re = /.*https\:\/\/github\.com\//i;   
-    url = url.replace(re, "");
-    
-    url = "http://github.com/" + url;
-    //console.log("final url:", url);
-    
-    var rawurl = url.replace(/\/github.com\//i, "/raw.githubusercontent.com/");
-    rawurl += '/master/auto-generated-widget.html';
-
-    return {
-      url: url,
-      rawurl : rawurl
-    };
-  }
-  else {
-    console.log('Unable to find ' + path + '. Please call "git pull" in your workspace!');
-    return null;
-  }
-  */
-
 }
