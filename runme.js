@@ -591,7 +591,7 @@ will you build on top of it?
     // do the properties and methods
   var s = "";
   for (var key in widget) {
-    var txt = widgetDocs[key] + '';
+    var txt = widgetDocs[key].descHtml + '';
     // get rid of spaces and returns after closing pre tags cuz it messes up github markdown
     txt = txt.replace(/<\/pre>[\s\r\n]*/ig, "</pre>");
     // convert double newlines to <br><br> tags
