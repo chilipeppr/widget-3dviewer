@@ -1,10 +1,84 @@
 /* CSS for ChiliPeppr Widget */
-
-#com-chilipeppr-widget-template {
-   
+#com-chilipeppr-widget-3dviewer .panel-heading {
+    z-index:1;
+    position:relative;
+}
+.com-chilipeppr-widget-3dviewer-simulator-title {
+    border-radius: 3px;
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+    float:left;
+    position: relative;
+    border: 1px solid #ccc;
+    display: inline-block;
+    border-right-width: 0;
 }
 
-#com-chilipeppr-widget-template .nav-tabs>li>a {
-    padding: 2px 6px;
+#com-chilipeppr-widget-3dviewer-body {
+    /* height: 350px; */
+    padding:0;
+    margin:0;
+    position: relative;
+    border:0px solid red;
+    background-color: blue;
 }
-
+#com-chilipeppr-widget-3dviewer-renderArea {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 0;
+    background-color: #000000;
+    /* z-index:0; */
+}
+#com-chilipeppr-widget-3dviewer .disabled .glyphicon {
+    color: #dddddd;
+}
+#com-chilipeppr-widget-3dviewer #warningArea {
+    position: absolute;
+    top:0;
+    left:0;
+    padding: 10px;
+    font-size: 9px;
+    color: white;
+}
+#com-chilipeppr-widget-3dviewer-infoArea {
+    position: absolute;
+    bottom:0;
+    left:0;
+    padding: 10px;
+    font-size: 9px;
+    color: #333333;
+    /* background-color: black; */
+}
+#com-chilipeppr-widget-3dviewer-infoArea .info {
+    position: absolute;
+    bottom:0;
+    left:0;
+    color: blue;
+    background-color:red;
+}
+#com-chilipeppr-widget-3dviewer-renderArea .data-details {
+    position: absolute;
+    bottom:0;
+    left:10;
+    /* background-color: transparent; */
+    color: #333333;
+    padding: 10px;
+    font-size: 9px;
+}
+.com-chilipeppr-widget-3dviewer-inspect {
+    padding-bottom:0;
+    margin-bottom:0;
+    font-size:10px;
+    position:absolute;
+    min-width:250px;
+    max-width:100%;
+    /* width:100%; */
+    z-index: 9;
+    box-shadow: 0 0 20px #888888;
+}
+.com-chilipeppr-widget-3dviewer-panzoom-indicator {
+    font-size:10px;
+    padding-top: 7px;
+}

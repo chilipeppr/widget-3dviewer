@@ -4,7 +4,9 @@
 <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 
-    <title><!--(auto-fill by runme.js--></title>
+    <title>
+        <!--(auto-fill by runme.js-->
+    </title>
 
     <!-- ChiliPeppr is based on bootstrap CSS. -->
     <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
@@ -32,61 +34,167 @@
 </head>
 
 <body>
-    <div id="com-chilipeppr-widget-template" class="panel panel-default">
-        <div class="panel-heading ">
 
+    <div id="com-chilipeppr-widget-3dviewer" class="panel panel-default" style="float:left;">
+        <div class="panel-heading well">
             <div class="btn-toolbar pull-right" role="toolbar">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-xs btn-default btn-sayhello" data-delay="1000" data-animation="true" data-placement="auto" data-container="body" data-trigger="hover" data-title="Say Hello" data-content="Generate a hello message">Say Hello
+                <div class="btn-group" data-style="padding-right:6px;">
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-viewextents" data-container="body" data-toggle="popover" data-placement="auto" data-content="View extents of GCode object" data-trigger="hover" data-delay="800"> <span class="glyphicon glyphicon-eye-open"></span>
                     </button>
-                </div>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-xs btn-default hidebody"><span class="glyphicon glyphicon-chevron-up"></span>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-lookattoolhead active btn-primary" data-container="body" data-toggle="popover" data-placement="auto" data-content="Look at the toolhead toggle button. If toggled on, during the sample or real run of Gcode the 3D view will always place the toolhead at the center. Toggling this off means the camera will not reposition onto the toolhead during moves."
+                    data-trigger="hover" data-delay="800"> <span class="glyphicon glyphicon-facetime-video"></span>
                     </button>
-                </div>
-                <div class="btn-group">
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-right" role="menu"></ul>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-jog" data-container="body" data-toggle="popover" data-placement="auto" data-content="Jog Mode. Click here or hold down Ctrl on the keyboard while your mouse is over the 3D viewer to turn on jog mode. This lets you move around the 3D object and click to jog based on where the jog head is at."
+                    data-trigger="hover" data-delay="800">Jog</button>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-inspect" data-container="body" data-toggle="popover" data-placement="auto" data-content="Inspect Mode. Click here or hold down Shift on the keyboard while your mouse is over the 3D viewer to turn on inspect mode. This lets you inspect lines in the 3D Viewer."
+                    data-trigger="hover" data-delay="800"><span class="glyphicon glyphicon-search"></span><span class="glyphicon glyphicon-hand-left" style="margin-left:0px;"></span>
+                    </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown"> <span class="glyphicon glyphicon-th"></span> <span class="caret" style="font-size:10px;margin-left: -2px;xmargin-right: -4px"></span></button>
+                        <ul id="com-chilipeppr-widget-3dviewer-gridsizing" class="dropdown-menu xdropdown-menu-right" role="menu">
+                            <li role="presentation" class="dropdown-header">Grid Size</li>
+                            <li><a class="alert-info com-chilipeppr-widget-3dviewer-gridsizing-1x" href="javascript:">1x (Default)</a></li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-gridsizing-2x" href="javascript:">2x</a></li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-gridsizing-5x" href="javascript:">5x</a></li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-gridsizing-10x" href="javascript:">10x</a></li>
+                        </ul>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown"> <span class="glyphicon glyphicon-cog"></span> <span class="caret" style="font-size:10px;margin-left: -2px;xmargin-right: -4px"></span></button>
+                        <ul id="com-chilipeppr-widget-3dviewer-settings" class="dropdown-menu xdropdown-menu-right" role="menu">
+                            <li role="presentation" class="dropdown-header">Options</li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-shadows" href="javascript:">Toggle Toolhead Shadow On/Off</a></li>
+                            <li role="presentation" class="divider"></li>
+                            <li role="presentation" class="dropdown-header">Frame Rate of Rendering</li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-5" href="javascript:">5 fps (Least CPU Usage)</a></li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-10" href="javascript:">10 fps</a></li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-15" href="javascript:">15 fps</a></li>
+                            <li><a class="alert-info com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-30" href="javascript:">30 fps (Default)</a></li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-60" href="javascript:">60 fps (Most CPU Usage)</a></li>
+                            <li role="presentation" class="divider"></li>
+                            <li role="presentation" class="dropdown-header">For Super Slow Machines</li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-0" href="javascript:">Disable 3D Viewer (No CPU Usage)</a></li>
+
+                        </ul>
                     </div>
                 </div>
-            </div> <span class="panel-title" data-toggle="popover">Template Widget</span> <span style="font-size:9px;" class="fb-build">v1</span>
-
+                <div class="btn-group" data-style="padding-right:6px;">
+                    <div class="btn-xs com-chilipeppr-widget-3dviewer-simulator-title" style="">Simulator</div>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-samplerun" data-container="body" data-toggle="popover" data-placement="auto" data-content="Play a sample run of the GCode" data-trigger="hover" data-delay="800"> <span class="glyphicon glyphicon-play"></span>
+                    </button>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-samplerunspeed" data-container="body" data-toggle="popover" data-placement="auto" data-content="Speed up from x1 to x1000" data-trigger="hover" data-delay="800">x1</button>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-samplerunpause" data-container="body" data-toggle="popover" data-placement="auto" data-content="Pause the sample run of the GCode" data-trigger="hover" data-delay="800">
+                    <span class="glyphicon glyphicon-pause"></span>
+                    </button>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-samplerunstop" data-container="body" data-toggle="popover" data-placement="auto" data-content="Stop the sample run of the GCode" data-trigger="hover" data-delay="800"> <span class="glyphicon glyphicon-stop"></span>
+                    </button>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown"> <span class="caret"></span></button>
+                    <ul id="com-chilipeppr-widget-3dviewer-dropdown" class="dropdown-menu dropdown-menu-right" role="menu">
+                        <li><a class="com-chilipeppr-widget-3d-menu-samplerun" href="javascript:">Play Sample Run</a></li>
+                    </ul>
+                </div>
+                <div class="btn-group" style="position:relative;font-size:9px;line-height:22px;">
+                    <div style="position:absolute;top:-1px;left:28px;border:0px solid red;line-height:10px;" class="com-chilipeppr-widget-3dviewer-units-indicator">-</div>
+                    <div style="position:absolute;top:5px;left:28px;border:0px solid red;" class="frames-per-sec">32&nbsp;fps</div>
+                </div>
+            </div>
+            <span class="panel-title" style="padding-right:10px;" data-toggle="popover" data-trigger="hover" data-placement="auto" data-content="">3D&nbsp;Viewer</span>
+            <div style="xposition:absolute;bottom:-18px;left:0px;border:0px solid red;line-height:10px;" class="com-chilipeppr-widget-3dviewer-panzoom-indicator">Pan: Right-Click Drag, Zoom: Mousewheel/Touchpad Scroll, Orbit: Mouse/Touch Drag</div>
         </div>
-        <div class="panel-body">
-            <!-- Nav tabs -->
-            <ul class="nav nav-tabs" role="tablist">
-                <li class="active"><a href="#com-chilipeppr-widget-template-tab1" role="tab" data-toggle="tab">Tab 1</a>
-                </li>
-                <li><a href="#com-chilipeppr-widget-template-tab2" role="tab" data-toggle="tab">Tab 2</a></li>
-                <li><a href="#com-chilipeppr-widget-template-tab3" role="tab" data-toggle="tab">Tab 3</a></li>
-            </ul>
-            <!-- Tab panes -->
+        <div id="com-chilipeppr-widget-3dviewer-body" class="panel-body">
+            <!-- WebGL rendering area -->
+            <div id="com-chilipeppr-widget-3dviewer-renderArea" tabindex="1">
+                <div class="data-details hidden">Drag and Drop Gcode Here...</div>
+            </div>
+            <div class="com-chilipeppr-widget-3dviewer-inspect panel hidden" style="top:40px;left:20px">
 
-            <!-- Tab 1 -->
-            <div class="tab-content">
-                <div class="tab-pane active" id="com-chilipeppr-widget-template-tab1">
-                    <p>This is the content of tab 1.</p>
-                    <div class="">
-                        <button type="button" class="btn btn-xs btn-default btn-helloworld2" style="margin: 4px 0;">Hello World 2</button>
-                    </div>
-                </div>
-
-                <!-- Tab 2 -->
-                <div class="tab-pane" id="com-chilipeppr-widget-template-tab2">
-                    <p>This is the content of tab 2.</p>
-                </div>
-
-                <!-- Tab 3 -->
-                <div class="tab-pane" id="com-chilipeppr-widget-template-tab3">
-                    <p>This is the content of tab 3.</p>
-                </div>
+                <table class="table table-bordered table-striped table-condensed">
+                    <tbody>
+                        <tr>
+                            <th colspan="2" class="info-title">
+                                <button type="button" class="close" style="width:100%;text-align:right;">&times;</button>
+                            </th>
+                        </tr>
+                        <tr class="row-signal" xstyle="vertical-align:middle;">
+                            <td xstyle="vertical-align:middle;">Line</td>
+                            <td xstyle="vertical-align:middle;">
+                                <span class="inspect-line" xstyle="vertical-align:middle;float:left;"></span>
+                                <button class="btn btn-default btn-xs pull-right inspect-btn-goto">Go To</button>
+                            </td>
+                        </tr>
+                        <tr class="">
+                            <td class="">Gcode</td>
+                            <td class="inspect-gcode"></td>
+                        </tr>
+                        <!-- <tr class="">
+                        <td class="">Start</td>
+                        <td class="inspect-start"></td>
+                    </tr> -->
+                        <tr class="">
+                            <td class="">End Pos</td>
+                            <td class="inspect-end"></td>
+                        </tr>
+                        <tr class="">
+                            <td class="">Feedrate</td>
+                            <td class="inspect-feedrate"></td>
+                        </tr>
+                        <tr>
+                            <td>Distance of Move</td>
+                            <td class="inspect-distance"></td>
+                        </tr>
+                        <tr>
+                            <td>Time for This Line</td>
+                            <td class="inspect-time"></td>
+                        </tr>
+                        <tr>
+                            <td>Est Time to Get Here</td>
+                            <td class="inspect-timeSum"></td>
+                        </tr>
+                    </tbody>
+                </table>
 
             </div>
+            <div id="warningArea">
+                <div class="alert alert-warning alert-dismissable hidden">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>G2/G3 arcs only rendered as straight lines. They are yellow to show where actual positioning in your CNC will differ from 3D rendering. If anyone wants to fork and fix arcs, feel free.</div>
 
+            </div>
         </div>
     </div>
+
+    <!-- Modal for Out of Local Storage -->
+    <div id="com-chilipeppr-widget-3dviewer-outofspace" class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">3D Viewer Out of Local Storage Space</h4>
+                </div>
+                <div class="modal-body">
+                    <p>You are out of local storage space, so ChiliPeppr can't save your Gcode file. Please delete all of your local storage files for ChiliPeppr using the
+                        <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown"
+                        data-container="body" data-toggle="popover" data-placement="auto" data-trigger="hover" data-title="Drag and Drop" data-content="Drag a Gcode file onto your browser window to load it."><span class="glyphicon glyphicon-file"></span><span class="glyphicon glyphicon-share-alt" style="margin-left:-2px;color:#666666;"></span> <span class="caret"></span></button> in the workspace.</p>
+                    <p>You can also ignore this error and proceed since ChiliPeppr will simply load your file into RAM and function perfectly fine. The only downside is if you reload ChiliPeppr, it won't have your most recent file loaded.</p>
+                    <p>Browsers typically only allow for 5MB of local storage, which isn't much.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+        <script id="vertexShader" type="x-shader/x-vertex">
+            uniform vec3 viewVector; uniform float c; uniform float p; varying float intensity; void main() { vec3 vNormal = normalize( normalMatrix * normal ); vec3 vNormel = normalize( normalMatrix * viewVector ); intensity = pow( c - dot(vNormal, vNormel), p );
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }
+        </script>
+
+        <!-- fragment shader a.k.a. pixel shader -->
+        <script id="fragmentShader" type="x-shader/x-vertex">
+            uniform vec3 glowColor; varying float intensity; void main() { vec3 glow = glowColor * intensity; gl_FragColor = vec4( glow, 1.0 ); }
+        </script>
+    </div>
+
 </body>
 
 </html>
