@@ -813,7 +813,7 @@ var generateWidgetDocs = function() {
   this widget inside a workspace or from another widget. The key is that
   you need to load your widget inlined into a div so the DOM can parse
   your HTML, CSS, and Javascript. Then you use cprequire() to find
-  your widget's Javascript and get back the instiated instance of it.</p>
+  your widget's Javascript and get back the instantiated instance of it.</p>
   
   <pre><code class="language-js" 
   data-lang="js">$cp-load-stmt</code></pre>
@@ -1203,7 +1203,7 @@ var generateInlinedFile = function() {
 
   // auto fill title if they're asking for it
   if (widget) {
-    var re = /<title><!--\(auto-fill by runme\.js--><\/title>/i;
+    var re = /<title>[\s\r\n]*<!--\(auto-fill by runme\.js-->[\s\r\n]*<\/title>/i;
     if (fileHtml.match(re)) {
     fileHtml = fileHtml.replace(re, "<title>" + widget.name + "</title>");
     console.log("Swapped in title for final HTML page.");
