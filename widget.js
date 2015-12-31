@@ -1,5 +1,5 @@
-/*global requirejs cprequire cpdefine chilipeppr THREE*/
-// ignore this errormessage:
+/* global requirejs cprequire cpdefine chilipeppr THREE */
+// Defining the globals above helps Cloud9 not show warnings for those variables
 
 // ChiliPeppr Widget/Element Javascript
 
