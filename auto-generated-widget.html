@@ -2196,6 +2196,22 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
         },
         grid: null, // stores grid
+        gridTurnOff: function() {
+            if (this.grid != null) {
+                console.log("there was a previous grid. remove it. grid:", this.grid);
+                this.sceneRemove(this.grid);
+            } else {
+                console.log("no previous grid.");
+            }
+        },
+        gridTurnOn: function() {
+            if (this.grid != null) {
+                console.log("there was a previous grid. so ignoring request to turn on. grid:", this.grid);
+            } else {
+                console.log("no previous grid. so drawing.");
+                this.drawGrid();
+            }
+        },
         drawGrid: function() {
             
             // remove grid if drawn previously
