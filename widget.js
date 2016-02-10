@@ -197,9 +197,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var reader = new FileReader();
                         reader.onload = function () {
                             console.log("opening file. reader:", reader);
+                            console.log ("stringify", JSON.stringify(reader.result, null, 2) );
                             that.openGCodeFromText(reader.result);
                         };
                         reader.readAsText(files[0]);
+                        // reader.readAsArrayBuffer(files[0]);
                     }
                 });
             }
