@@ -28,17 +28,21 @@ Javascript. Then you use cprequire() to find your widget's Javascript and get
 back the instance of it.
 
 ```javascript
+// Inject new div to contain widget or use an existing div with an ID
+$("body").append('<' + 'div id="myDivWidget3dviewer"><' + '/div>');
+
 chilipeppr.load(
-  "#myDivWidgetInsertedInto",
+  "#myDivWidget3dviewer",
   "http://raw.githubusercontent.com/raykholo/widget-3dviewer/master/auto-generated-widget.html",
   function() {
-    // Callback after widget loaded into #myDivWidgetInsertedInto
+    // Callback after widget loaded into #myDivWidget3dviewer
+    // Now use require.js to get reference to instantiated widget
     cprequire(
       ["inline:com-chilipeppr-widget-3dviewer"], // the id you gave your widget
-      function(mywidget) {
-        // Callback that is passed reference to your newly loaded widget
-        console.log("My widget just got loaded.", mywidget);
-        mywidget.init();
+      function(myObjWidget3dviewer) {
+        // Callback that is passed reference to the newly loaded widget
+        console.log("Widget / 3D GCode Viewer just got loaded.", myObjWidget3dviewer);
+        myObjWidget3dviewer.init();
       }
     );
   }
