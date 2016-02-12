@@ -3103,7 +3103,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 var speed = Math.round(line.e / 1000);
                 var grouptype = (line.extruding ? 10000 : 0) + speed;
                 // Parse S parameter
-                var opacity = 0.5; // default
+                var opacity = line.s;
                 if (typeof line.s === 'undefined') {
                     opacity = 0.3;
                     //opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
