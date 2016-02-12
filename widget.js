@@ -147,7 +147,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         tweenHighlight: null,
         tweenIndex: null,
         tweenSpeed: 1,
-        sValue: 100,
+        sMax: 100,
         tweenPaused: false,
         tweenIsPlaying: false,
         wantAnimate: true, // we automatically timeout rendering to save on cpu
