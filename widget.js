@@ -3039,7 +3039,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         segmentCount: 0,
                         material: new THREE.LineBasicMaterial({
                             //opacity: opacity,
-                            opacity: 1.0,
+                            opacity: 0.2,
                             //opacity: line.extruding ? 0.5: line.g2 ? 0.2 : 0.3,
                             transparent: true,
                             linewidth: 1,
