@@ -3020,7 +3020,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     //opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
                 } else {
                     opacity = line.s / smaxvalue;   // smaxvalue from sValue() - makes sure 100% s value = 100% opacity
-                    //console.warn('Raster Opacity:  '+opacity);
+                    console.log('Raster Opacity:  '+opacity);
                 }
                 
                 //var color = new THREE.Color(line.extruding ? 0xff00ff : 0x0000ff);
