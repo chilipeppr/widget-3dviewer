@@ -2998,6 +2998,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 if (layer == undefined) this.newLayer(line);
                 var speed = Math.round(line.e / 1000);
                 var grouptype = (line.extruding ? 10000 : 0) + speed;
+                var opacity = Math.round(line.s);
                 //var color = new THREE.Color(line.extruding ? 0xff00ff : 0x0000ff);
                 var color = new THREE.Color(line.extruding ? 0xff00ff : this.colorG1);
                 if (line.g0) {
