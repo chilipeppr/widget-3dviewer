@@ -1233,8 +1233,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             //var s = this.tweenSpeed;
             this.svalPos = this.svalPos++;
             if (this.svalPos > 3) this.svalPos = 0;
-            var txt = "S" + this.sMax[svalPos];
-            smaxvlue = this.sMax[svalPos];
+            var txt = "S" + this.sMax[this.svalPos];
+            smaxvlue = this.sMax[this.svalPos];
             $('.com-chilipeppr-widget-3d-menu-smaxvalue').text(txt);
         },
         openGCodeFromPath: function (path) {
