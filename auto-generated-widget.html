@@ -3101,9 +3101,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 //console.log("getLineGroup:", line);
                 if (layer == undefined) this.newLayer(line);
                 var speed = Math.round(line.e / 1000);
-                var grouptype = (line.extruding ? 10000 : 0) + speed + opacity;
-                // Parse S parameter
+                // Parse S parameter and split same S+F into same grouptype (before it only put same F valued lines in same group)
                 var opacity = line.s;
+                var grouptype = (line.extruding ? 10000 : 0) + speed + opacity;
+                
                 if (typeof line.s === 'undefined') {
                     opacity = 0.3;
                     //opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
