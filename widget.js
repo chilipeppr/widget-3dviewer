@@ -2787,7 +2787,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // and it should be assumed that the last specified gcode
                         // cmd is what's assumed
                         isComment = false;
-                        if (!cmd.match(/^(G|M|T)/i)) {
+                        if (!cmd.match(/^(G|M|T|S)/i)) {
                             // if comment, drop it
                             /*
                             if (cmd.match(/(;|\(|<)/)) {
@@ -2990,6 +2990,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 layers.push(layer);
             };
 
+           
+           
+            
             this.getLineGroup = function (line, args) {
                 //console.log("getLineGroup:", line);
                 if (layer == undefined) this.newLayer(line);
@@ -3025,7 +3028,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         color: color,
                         segmentCount: 0,
                         material: new THREE.LineBasicMaterial({
-                            opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
+                            //opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
+                            opacity: opacity,
                             transparent: true,
                             linewidth: 1,
                             vertexColors: THREE.FaceColors
@@ -3521,6 +3525,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
+                        s: args.s !== undefined ? cofg.absolute(lastLine.s, args.s) : lastLine.s,
 
                     };
                     /* layer change detection is or made by watching Z, it's made by
