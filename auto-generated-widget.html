@@ -3109,7 +3109,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     //opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
                 } else {
                     opacity = line.s / 100;
-                    console.warn('Raster Opacity:  '+opacity);
+                    //console.warn('Raster Opacity:  '+opacity);
                 }
                 
                 //var color = new THREE.Color(line.extruding ? 0xff00ff : 0x0000ff);
@@ -3150,6 +3150,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         }),
                         geometry: new THREE.Geometry(),
                     }
+                    console.warn('Raster Opacity:  '+opacity);
                     if (args.indx > indxMax) {
                         layer.type[grouptype].material.opacity = 0.05;
                     }
