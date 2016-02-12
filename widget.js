@@ -147,7 +147,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         tweenHighlight: null,
         tweenIndex: null,
         tweenSpeed: 1,
-        sMax: 100,
+        sMax: ["1", "100", "255", "10000"],
+        svalPos: 1,
         tweenPaused: false,
         tweenIsPlaying: false,
         wantAnimate: true, // we automatically timeout rendering to save on cpu
@@ -1125,11 +1126,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         sValue: function () {
            //var txt = $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text();
-            console.log("speedUp. tweenSpeed:", this.tweenSpeed);
             //var s = this.tweenSpeed;
-            this.sMax = this.sMax * 10;
-            if (this.sMax > 1024) this.sMax = 1;
-            var txt = "S" + this.sMax;
+            this.svalPos = this.svalPos++;
+            if (this.svalPos > 3) this.svalPos = 0;
+            var txt = "S" + this.sMax[svalPos];
+            smaxvlue = this.sMax[svalPos];
             $('.com-chilipeppr-widget-3d-menu-smaxvalue').text(txt);
         },
         openGCodeFromPath: function (path) {
