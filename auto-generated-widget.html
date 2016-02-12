@@ -3098,42 +3098,52 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
            
             
             this.getLineGroup = function (line, args) {
-                //console.log("getLineGroup:", line);
-                if (layer == undefined) this.newLayer(line);
+                  //console.log("getLineGroup:", line);
+                if (layer == undefined) newLayer(line);
                 var speed = Math.round(line.e / 1000);
-                var grouptype = (line.extruding ? 10000 : 0) + speed;
-                // Parse S parameter
-                var opacity = 0.5; // default
-                 if(typeof line.s === 'undefined'){
+                var opacity = line.s;
+                var grouptype = (line.extruding ? 10000 : 0) + speed + opacity;
+
+                var color = new THREE.Color(line.extruding ? 0x990000 : 0x990000);
+
+                if(typeof line.s === 'undefined'){
                     opacity = 0.3;
-                    console.warn('Opacity:  '+opacity);
-                    //opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
                 } else {
-                    opacity = line.s / 100;
-                    console.warn('Raster Opacity:  '+opacity);
+                    if (firmware.indexOf('Grbl') == 0) {
+                      opacity = line.s / 255;
+                    } else if (firmware.indexOf('Smooth') == 0) {
+                      opacity = line.s;
+                      //console.log(opacity+', '+line.x);
+                      //console.log(opacity);
+                    } else if (firmware.indexOf('Lasaur') == 0) {
+                      opacity = line.s / 255;
+                      //console.log(opacity+', '+line.x);
+                    } else {
+                      opacity = line.s / 100;
+                      //console.log(opacity+', '+line.x);
+                    }
                 }
-                
-                //var color = new THREE.Color(line.extruding ? 0xff00ff : 0x0000ff);
-                var color = new THREE.Color(line.extruding ? 0xff00ff : this.colorG1);
+                //console.log(opacity);
+                // LaserWeb 3D Viewer Colors
                 if (line.g0) {
                     grouptype =  "g0";
                     //color = new THREE.Color(0x00ff00);
-                    color = new THREE.Color(this.colorG0);
+                    color = new THREE.Color(0x00ff00);
                 } else if (line.g2) {
                     grouptype = "g2";
                     //color = new THREE.Color(0x999900);
-                    color = new THREE.Color(this.colorG2);
+                    color = new THREE.Color(0x990000);
                 } else if (line.arc) {
                     grouptype = "arc";
-                    color = new THREE.Color(0x0099ff);
+                    color = new THREE.Color(0x990000);
                 }
-                // see if we have reached indxMax, if so draw, but 
+                // see if we have reached indxMax, if so draw, but
                 // make it ghosted
-                if (args.indx > indxMax) {
-                    grouptype = "ghost";
-                    //console.log("args.indx > indxMax", args, indxMax);
-                    color = new THREE.Color(0x000000);
-                }
+                //if (args.indx > indxMax) {
+                //    grouptype = "ghost";
+                //    //console.log("args.indx > indxMax", args, indxMax);
+                //    color = new THREE.Color(0x000000);
+               // }
                 //if (line.color) color = new THREE.Color(line.color);
                 if (layer.type[grouptype] == undefined) {
                     layer.type[grouptype] = {
@@ -3151,12 +3161,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         }),
                         geometry: new THREE.Geometry(),
                     }
-                    if (args.indx > indxMax) {
-                        layer.type[grouptype].material.opacity = 0.05;
-                    }
+                    //if (args.indx > indxMax) {
+                    //   layer.type[grouptype].material.opacity = 0.05;
+                    //}
                 }
                 return layer.type[grouptype];
             };
+
 
             this.drawArc = function(aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise, plane) {
                 //console.log("drawArc:", aX, aY, aZ, aRadius, aStartAngle, aEndAngle, aClockwise);
