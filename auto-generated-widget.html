@@ -1157,6 +1157,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             $('.com-chilipeppr-widget-3d-menu-samplerunspeed').click(function () {
                 that.speedUp()
             });
+            $('.com-chilipeppr-widget-3d-menu-smaxvalue').click(function () {
+                that.sValue()
+            });
             $('.com-chilipeppr-widget-3d-menu-samplerunpause').click(function () {
                 that.pauseSampleRun()
             }).prop('disabled', true);
@@ -1225,7 +1228,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         sValue: function () {
             //var txt = $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text();
-            console.log("speedUp. tweenSpeed:", this.tweenSpeed);
+            console.log("sValue:", this.sMax);
             //var s = this.tweenSpeed;
             this.sMax = this.sMax * 10;
             if (this.sMax > 1024) this.sMax = 1;
