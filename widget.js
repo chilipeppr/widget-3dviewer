@@ -3004,6 +3004,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 } else {
                     opacity = line.s / 100;
                 }
+                console.log('Opactiy:  '+opacity);
                 //var color = new THREE.Color(line.extruding ? 0xff00ff : 0x0000ff);
                 var color = new THREE.Color(line.extruding ? 0xff00ff : this.colorG1);
                 if (line.g0) {
