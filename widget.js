@@ -147,6 +147,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         tweenHighlight: null,
         tweenIndex: null,
         tweenSpeed: 1,
+        sMax: ["1", "100", "255", "10000"],
+        svalPos: 1,
+        smaxvalue: 100,
         tweenPaused: false,
         tweenIsPlaying: false,
         wantAnimate: true, // we automatically timeout rendering to save on cpu
@@ -1053,6 +1056,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             $('.com-chilipeppr-widget-3d-menu-samplerunspeed').click(function () {
                 that.speedUp()
             });
+            $('.com-chilipeppr-widget-3d-menu-smaxvalue').click(function () {
+                that.sValue()
+            });
             $('.com-chilipeppr-widget-3d-menu-samplerunpause').click(function () {
                 that.pauseSampleRun()
             }).prop('disabled', true);
@@ -1118,6 +1124,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             if (this.tweenSpeed > 1024) this.tweenSpeed = 1;
             var txt = "x" + this.tweenSpeed;
             $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text(txt);
+        },
+        sValue: function () {
+           //var txt = $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text();
+            //var s = this.tweenSpeed;
+            this.svalPos += 1;
+            if (this.svalPos > 3) this.svalPos = 0;
+            var txt = "S" + this.sMax[this.svalPos];
+            smaxvalue = this.sMax[this.svalPos];
+            $('.com-chilipeppr-widget-3d-menu-smaxvalue').text(txt);
         },
         openGCodeFromPath: function (path) {
             var that = this;
@@ -2787,7 +2802,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // and it should be assumed that the last specified gcode
                         // cmd is what's assumed
                         isComment = false;
-                        if (!cmd.match(/^(G|M|T)/i)) {
+                        if (!cmd.match(/^(G|M|T|S)/i)) {
                             // if comment, drop it
                             /*
                             if (cmd.match(/(;|\(|<)/)) {
@@ -2990,11 +3005,29 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 layers.push(layer);
             };
 
+           
+           
+            
             this.getLineGroup = function (line, args) {
                 //console.log("getLineGroup:", line);
                 if (layer == undefined) this.newLayer(line);
                 var speed = Math.round(line.e / 1000);
-                var grouptype = (line.extruding ? 10000 : 0) + speed;
+                // Parse S parameter and split same S+F into same grouptype (before it only put same F valued lines in same group)
+                var opacity = line.s;
+                var grouptype = (line.extruding ? 10000 : 0) + speed + opacity;
+                
+                if (typeof line.s === 'undefined') {
+                    opacity = 0.3;
+                    //opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
+                } else {
+                    if (typeof smaxvalue === 'undefined') {
+                        opacity = line.s / 100;   // smaxvalue from sValue() - makes sure 100% s value = 100% opacity
+                    } else {
+                        opacity = line.s / smaxvalue;
+                    }
+                    //console.log('Raster Opacity:  '+opacity);
+                }
+                
                 //var color = new THREE.Color(line.extruding ? 0xff00ff : 0x0000ff);
                 var color = new THREE.Color(line.extruding ? 0xff00ff : this.colorG1);
                 if (line.g0) {
@@ -3025,13 +3058,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         color: color,
                         segmentCount: 0,
                         material: new THREE.LineBasicMaterial({
-                            opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
+                            opacity: opacity,
+                            //opacity: line.extruding ? 0.5: line.g2 ? 0.2 : 0.3,
                             transparent: true,
                             linewidth: 1,
                             vertexColors: THREE.FaceColors
                         }),
                         geometry: new THREE.Geometry(),
                     }
+                    console.warn('Raster Opacity:  '+opacity);
                     if (args.indx > indxMax) {
                         layer.type[grouptype].material.opacity = 0.05;
                     }
@@ -3521,6 +3556,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
+                        s: args.s !== undefined ? cofg.absolute(lastLine.s, args.s) : lastLine.s,
 
                     };
                     /* layer change detection is or made by watching Z, it's made by
@@ -3546,6 +3582,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
+                        s: args.s !== undefined ? cofg.absolute(lastLine.s, args.s) : lastLine.s,
                         arci: args.i ? args.i : null,
                         arcj: args.j ? args.j : null,
                         arck: args.k ? args.k : null,

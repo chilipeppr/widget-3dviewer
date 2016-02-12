@@ -212,10 +212,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         id: 'com-chilipeppr-widget-3dviewer',
         name: "Widget / 3D GCode Viewer",
         desc: "Visualize your GCode in 3D by simulating your GCode run or seeing where your run is at in 3D while your CNC operation is in action.",
-        url: "http://raw.githubusercontent.com/chilipeppr/widget-3dviewer/master/auto-generated-widget.html",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
-        fiddleurl: "http://ide.c9.io/chilipeppr/widget-3dviewer", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
-        githuburl: "http://github.com/chilipeppr/widget-3dviewer", // The backing github repo
-        testurl: "http://widget-3dviewer-chilipeppr.c9users.io/widget.html",   // The standalone working widget so can view it working by itself
+        url: "http://raw.githubusercontent.com/openhardwarecoza/widget-3dviewer/master/auto-generated-widget.html",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
+        fiddleurl: "http://ide.c9.io/openhardwarecoza/widget-3dviewer", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
+        githuburl: "http://github.com/openhardwarecoza/widget-3dviewer", // The backing github repo
+        testurl: "http://widget-3dviewer-openhardwarecoza.c9users.io/widget.html",   // The standalone working widget so can view it working by itself
         publish: {
             '/recv3dObject' : "When you send a /request3dObject you will receive a signal back of /recv3dObject. This signal has a payload of the THREE.js user object being shown in the 3D viewer.",
             '/recvUnits' : 'When you send a /requestUnits you will receive back this signal with a payload of "mm" or "inch" as a string. Please also see /unitsChanged in case you want to know whenever units are changed from a file open event. You can request what units the Gcode are in from the 3D Viewer. Since the 3D Viewer parses Gcode, it can determine the units. The 3D Viewer is mostly unit agnostic, however to draw the toolhead, grid, and extents labels it does need to know the units to draw the decorations in a somewhat appropriate size.',
@@ -251,6 +251,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         tweenHighlight: null,
         tweenIndex: null,
         tweenSpeed: 1,
+        sMax: ["1", "100", "255", "10000"],
+        svalPos: 1,
+        smaxvalue: 100,
         tweenPaused: false,
         tweenIsPlaying: false,
         wantAnimate: true, // we automatically timeout rendering to save on cpu
@@ -1157,6 +1160,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             $('.com-chilipeppr-widget-3d-menu-samplerunspeed').click(function () {
                 that.speedUp()
             });
+            $('.com-chilipeppr-widget-3d-menu-smaxvalue').click(function () {
+                that.sValue()
+            });
             $('.com-chilipeppr-widget-3d-menu-samplerunpause').click(function () {
                 that.pauseSampleRun()
             }).prop('disabled', true);
@@ -1222,6 +1228,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             if (this.tweenSpeed > 1024) this.tweenSpeed = 1;
             var txt = "x" + this.tweenSpeed;
             $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text(txt);
+        },
+        sValue: function () {
+           //var txt = $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text();
+            //var s = this.tweenSpeed;
+            this.svalPos += 1;
+            if (this.svalPos > 3) this.svalPos = 0;
+            var txt = "S" + this.sMax[this.svalPos];
+            smaxvalue = this.sMax[this.svalPos];
+            $('.com-chilipeppr-widget-3d-menu-smaxvalue').text(txt);
         },
         openGCodeFromPath: function (path) {
             var that = this;
@@ -2891,7 +2906,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // and it should be assumed that the last specified gcode
                         // cmd is what's assumed
                         isComment = false;
-                        if (!cmd.match(/^(G|M|T)/i)) {
+                        if (!cmd.match(/^(G|M|T|S)/i)) {
                             // if comment, drop it
                             /*
                             if (cmd.match(/(;|\(|<)/)) {
@@ -3094,11 +3109,29 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 layers.push(layer);
             };
 
+           
+           
+            
             this.getLineGroup = function (line, args) {
                 //console.log("getLineGroup:", line);
                 if (layer == undefined) this.newLayer(line);
                 var speed = Math.round(line.e / 1000);
-                var grouptype = (line.extruding ? 10000 : 0) + speed;
+                // Parse S parameter and split same S+F into same grouptype (before it only put same F valued lines in same group)
+                var opacity = line.s;
+                var grouptype = (line.extruding ? 10000 : 0) + speed + opacity;
+                
+                if (typeof line.s === 'undefined') {
+                    opacity = 0.3;
+                    //opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
+                } else {
+                    if (typeof smaxvalue === 'undefined') {
+                        opacity = line.s / 100;   // smaxvalue from sValue() - makes sure 100% s value = 100% opacity
+                    } else {
+                        opacity = line.s / smaxvalue;
+                    }
+                    //console.log('Raster Opacity:  '+opacity);
+                }
+                
                 //var color = new THREE.Color(line.extruding ? 0xff00ff : 0x0000ff);
                 var color = new THREE.Color(line.extruding ? 0xff00ff : this.colorG1);
                 if (line.g0) {
@@ -3129,13 +3162,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         color: color,
                         segmentCount: 0,
                         material: new THREE.LineBasicMaterial({
-                            opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
+                            opacity: opacity,
+                            //opacity: line.extruding ? 0.5: line.g2 ? 0.2 : 0.3,
                             transparent: true,
                             linewidth: 1,
                             vertexColors: THREE.FaceColors
                         }),
                         geometry: new THREE.Geometry(),
                     }
+                    console.warn('Raster Opacity:  '+opacity);
                     if (args.indx > indxMax) {
                         layer.type[grouptype].material.opacity = 0.05;
                     }
@@ -3625,6 +3660,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
+                        s: args.s !== undefined ? cofg.absolute(lastLine.s, args.s) : lastLine.s,
 
                     };
                     /* layer change detection is or made by watching Z, it's made by
@@ -3650,6 +3686,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
+                        s: args.s !== undefined ? cofg.absolute(lastLine.s, args.s) : lastLine.s,
                         arci: args.i ? args.i : null,
                         arcj: args.j ? args.j : null,
                         arck: args.k ? args.k : null,
@@ -4222,6 +4259,20 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-samplerunstop" data-container="body" data-toggle="popover" data-placement="auto" data-content="Stop the sample run of the GCode" data-trigger="hover" data-delay="800"> <span class="glyphicon glyphicon-stop"></span>
                     </button>
                 </div>
+               
+                <div class="btn-group" data-style="padding-right:6px;">
+                    <div class="btn-xs com-chilipeppr-widget-3dviewer-simulator-title" style="">Laser Mode</div>
+                    </button>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-smaxvalue" data-container="body" data-toggle="popover" data-placement="auto" data-content="Maximum S Value expected" data-trigger="hover" data-delay="800">S100</button>
+                
+                    <!-- button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-samplerunspeed" data-container="body" data-toggle="popover" data-placement="auto" data-content="Speed up from x1 to x1000" data-trigger="hover" data-delay="800">x1</button>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-samplerunpause" data-container="body" data-toggle="popover" data-placement="auto" data-content="Pause the sample run of the GCode" data-trigger="hover" data-delay="800">
+                    <span class="glyphicon glyphicon-pause"></span>
+                    </button>
+                    <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-samplerunstop" data-container="body" data-toggle="popover" data-placement="auto" data-content="Stop the sample run of the GCode" data-trigger="hover" data-delay="800"> <span class="glyphicon glyphicon-stop"></span>
+                    </button -->
+                </div>
+               
                 <div class="btn-group">
                     <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown"> <span class="caret"></span></button>
                     <ul id="com-chilipeppr-widget-3dviewer-dropdown" class="dropdown-menu dropdown-menu-right" role="menu">
