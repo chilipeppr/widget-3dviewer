@@ -1235,6 +1235,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             if (this.sMax > 1024) this.sMax = 1;
             var txt = "S" +this.sMax;
             $('.com-chilipeppr-widget-3d-menu-smaxvalue').text(txt);
+            console.log("sValue:", txt);
         },
         openGCodeFromPath: function (path) {
             var that = this;
