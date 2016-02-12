@@ -1124,14 +1124,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text(txt);
         },
         sValue: function () {
-            //var txt = $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text();
-            console.log("sValue:", this.sMax);
+           //var txt = $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text();
+            console.log("speedUp. tweenSpeed:", this.tweenSpeed);
             //var s = this.tweenSpeed;
-            this.sMax = this.sMax * 10;
-            if (this.sMax > 1024) this.sMax = 1;
-            var txt = "S" +this.sMax;
+            this.tweenSpeed = this.tweenSpeed * 10;
+            if (this.tweenSpeed > 1024) this.tweenSpeed = 1;
+            var txt = "x" + this.tweenSpeed;
             $('.com-chilipeppr-widget-3d-menu-smaxvalue').text(txt);
-            console.log("sValue:", txt);
         },
         openGCodeFromPath: function (path) {
             var that = this;
