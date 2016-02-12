@@ -2997,7 +2997,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 //console.log("getLineGroup:", line);
                 if (layer == undefined) this.newLayer(line);
                 var speed = Math.round(line.e / 1000);
-                var grouptype = (line.extruding ? 10000 : 0) + speed;
+                var grouptype = (line.extruding ? 10000 : 0) + speed + opacity;
                 // Parse S parameter
                 var opacity = line.s;
                 if (typeof line.s === 'undefined') {
@@ -3038,8 +3038,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         color: color,
                         segmentCount: 0,
                         material: new THREE.LineBasicMaterial({
-                            //opacity: opacity,
-                            opacity: 0.2,
+                            opacity: opacity,
                             //opacity: line.extruding ? 0.5: line.g2 ? 0.2 : 0.3,
                             transparent: true,
                             linewidth: 1,
