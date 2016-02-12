@@ -1127,10 +1127,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         sValue: function () {
            //var txt = $('.com-chilipeppr-widget-3d-menu-samplerunspeed').text();
             //var s = this.tweenSpeed;
-            this.svalPos = this.svalPos++;
+            this.svalPos += 1;
             if (this.svalPos > 3) this.svalPos = 0;
             var txt = "S" + this.sMax[this.svalPos];
-            smaxvlue = this.sMax[this.svalPos];
+            smaxvalue = this.sMax[this.svalPos];
             $('.com-chilipeppr-widget-3d-menu-smaxvalue').text(txt);
         },
         openGCodeFromPath: function (path) {
