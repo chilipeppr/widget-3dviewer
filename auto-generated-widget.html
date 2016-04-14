@@ -242,10 +242,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         id: 'com-chilipeppr-widget-3dviewer',
         name: "Widget / 3D GCode Viewer",
         desc: "Visualize your GCode in 3D by simulating your GCode run or seeing where your run is at in 3D while your CNC operation is in action.",
-        url: "http://raw.githubusercontent.com/raykholo/widget-3dviewer/master/auto-generated-widget.html",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
-        fiddleurl: "http://ide.c9.io/raykholo/widget-3dviewer", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
-        githuburl: "http://github.com/raykholo/widget-3dviewer", // The backing github repo
-        testurl: "http://widget-3dviewer-raykholo.c9users.io/widget.html",   // The standalone working widget so can view it working by itself
+        url: "http://raw.githubusercontent.com/chilipeppr/widget-3dviewer/master/auto-generated-widget.html",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
+        fiddleurl: "http://ide.c9.io/chilipeppr/widget-3dviewer", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
+        githuburl: "http://github.com/chilipeppr/widget-3dviewer", // The backing github repo
+        testurl: "http://widget-3dviewer-chilipeppr.c9users.io/widget.html",   // The standalone working widget so can view it working by itself
         publish: {
             '/recv3dObject' : "When you send a /request3dObject you will receive a signal back of /recv3dObject. This signal has a payload of the THREE.js user object being shown in the 3D viewer.",
             '/recvUnits' : 'When you send a /requestUnits you will receive back this signal with a payload of "mm" or "inch" as a string. Please also see /unitsChanged in case you want to know whenever units are changed from a file open event. You can request what units the Gcode are in from the 3D Viewer. Since the 3D Viewer parses Gcode, it can determine the units. The 3D Viewer is mostly unit agnostic, however to draw the toolhead, grid, and extents labels it does need to know the units to draw the decorations in a somewhat appropriate size.',
