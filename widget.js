@@ -247,6 +247,17 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 console.log("loading chilipeppr logo");
                 that.openGCodeFromPath(lastLoaded || 'http://www.chilipeppr.com/3d/chilipepprlogo.nc');
             }
+            
+            var lastFpsRate = localStorage.getItem ('fpsRate');
+            if (lastFpsRate) {
+                console.log("got prior FPS Rate, setting it now:  ", lastFpsRate, "//rk");
+                //this.setFrameRate(parseInt(lastFpsRate) );
+                var fr = parseInt(lastFpsRate);
+                this.setFrameRate(fr);
+                // set css to show selected
+                $('.com-chilipeppr-widget-3dviewer-settings-fr').removeClass('alert-info');
+                $('.com-chilipeppr-widget-3dviewer-settings-fr-' + fr).addClass('alert-info');
+            }
 
             // setup toolbar buttons
             this.btnSetup();
@@ -2641,6 +2652,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         setFrameRate: function(rate) {
+            
+            localStorage.setItem ('fpsRate', rate);
+            console.log ("Set fpsRate in storage:  ", rate);
             
             // see if disabled
             if (rate == 0) {
