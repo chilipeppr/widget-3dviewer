@@ -155,6 +155,32 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
     setTimeout(function() {
             chilipeppr.publish('/' + threed.id + '/resize', "" );
     }, 3000);
+    //dragdrop
+    $('body').prepend('<div id="test-drag-drop"></div>');
+    chilipeppr.load("#test-drag-drop", "http://fiddle.jshell.net/chilipeppr/Z9F6G/show/light/",
+
+    function () {
+        cprequire(
+        ["inline:com-chilipeppr-elem-dragdrop"],
+
+        function (dd) {
+            dd.init();
+            dd.bind("body", null);
+        });
+    });
+    
+    // flashmsg
+    $('body').prepend('<div id="com-chilipeppr-flash"></div>');
+    chilipeppr.load("#com-chilipeppr-flash",
+        "http://fiddle.jshell.net/chilipeppr/90698kax/show/light/",
+
+    function () {
+        console.log("mycallback got called after loading flash msg module");
+        cprequire(["inline:com-chilipeppr-elem-flashmsg"], function (fm) {
+            //console.log("inside require of " + fm.id);
+            fm.init();
+        });
+    });
     
     var testGotoline = function() {
         // send sample gcodeline commands as if the gcode sender widget were sending them
@@ -216,10 +242,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         id: 'com-chilipeppr-widget-3dviewer',
         name: "Widget / 3D GCode Viewer",
         desc: "Visualize your GCode in 3D by simulating your GCode run or seeing where your run is at in 3D while your CNC operation is in action.",
-        url: "http://raw.githubusercontent.com/chilipeppr/widget-3dviewer/master/auto-generated-widget.html",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
-        fiddleurl: "http://ide.c9.io/chilipeppr/widget-3dviewer", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
-        githuburl: "http://github.com/chilipeppr/widget-3dviewer", // The backing github repo
-        testurl: "http://widget-3dviewer-chilipeppr.c9users.io/widget.html",   // The standalone working widget so can view it working by itself
+        url: "http://raw.githubusercontent.com/raykholo/widget-3dviewer/master/auto-generated-widget.html",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
+        fiddleurl: "http://ide.c9.io/raykholo/widget-3dviewer", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
+        githuburl: "http://github.com/raykholo/widget-3dviewer", // The backing github repo
+        testurl: "http://widget-3dviewer-raykholo.c9users.io/widget.html",   // The standalone working widget so can view it working by itself
         publish: {
             '/recv3dObject' : "When you send a /request3dObject you will receive a signal back of /recv3dObject. This signal has a payload of the THREE.js user object being shown in the 3D viewer.",
             '/recvUnits' : 'When you send a /requestUnits you will receive back this signal with a payload of "mm" or "inch" as a string. Please also see /unitsChanged in case you want to know whenever units are changed from a file open event. You can request what units the Gcode are in from the 3D Viewer. Since the 3D Viewer parses Gcode, it can determine the units. The 3D Viewer is mostly unit agnostic, however to draw the toolhead, grid, and extents labels it does need to know the units to draw the decorations in a somewhat appropriate size.',
@@ -305,9 +331,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var reader = new FileReader();
                         reader.onload = function () {
                             console.log("opening file. reader:", reader);
+                            console.log ("stringify", JSON.stringify(reader.result, null, 2) );
                             that.openGCodeFromText(reader.result);
                         };
                         reader.readAsText(files[0]);
+                        // reader.readAsArrayBuffer(files[0]);
                     }
                 });
             }
@@ -322,6 +350,17 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 //that.openGCodeFromPath(lastLoaded || 'examples/octocat.gcode');
                 console.log("loading chilipeppr logo");
                 that.openGCodeFromPath(lastLoaded || 'http://www.chilipeppr.com/3d/chilipepprlogo.nc');
+            }
+            
+            var lastFpsRate = localStorage.getItem ('fpsRate');
+            if (lastFpsRate) {
+                console.log("got prior FPS Rate, setting it now:  ", lastFpsRate, "//rk");
+                //this.setFrameRate(parseInt(lastFpsRate) );
+                var fr = parseInt(lastFpsRate);
+                this.setFrameRate(fr);
+                // set css to show selected
+                $('.com-chilipeppr-widget-3dviewer-settings-fr').removeClass('alert-info');
+                $('.com-chilipeppr-widget-3dviewer-settings-fr-' + fr).addClass('alert-info');
             }
 
             // setup toolbar buttons
@@ -1374,6 +1413,17 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var leny = maxy - miny;
             var lenz = maxz - minz;
             console.log("lenx:", lenx, "leny:", leny, "lenz:", lenz);
+            
+            var maxBeforeWarnX = 50;
+            var maxBeforeWarnY = 50;
+            var maxBeforeWarnZ = 50;
+            
+            if (lenx > maxBeforeWarnX || leny > maxBeforeWarnY || lenz > maxBeforeWarnZ) {
+                //alert ("too big!");
+                //chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", "GCode Size Warning", "This GCode looks very large. Are you sure the units are correct?", 6 * 1000);
+            }
+            
+            
             var maxlen = Math.max(lenx, leny, lenz);
             var dist = 2 * maxlen;
             // center camera on gcode objects center pos, but twice the maxlen
@@ -2706,6 +2756,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         setFrameRate: function(rate) {
+            
+            localStorage.setItem ('fpsRate', rate);
+            console.log ("Set fpsRate in storage:  ", rate);
             
             // see if disabled
             if (rate == 0) {

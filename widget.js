@@ -51,6 +51,32 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
     setTimeout(function() {
             chilipeppr.publish('/' + threed.id + '/resize', "" );
     }, 3000);
+    //dragdrop
+    $('body').prepend('<div id="test-drag-drop"></div>');
+    chilipeppr.load("#test-drag-drop", "http://fiddle.jshell.net/chilipeppr/Z9F6G/show/light/",
+
+    function () {
+        cprequire(
+        ["inline:com-chilipeppr-elem-dragdrop"],
+
+        function (dd) {
+            dd.init();
+            dd.bind("body", null);
+        });
+    });
+    
+    // flashmsg
+    $('body').prepend('<div id="com-chilipeppr-flash"></div>');
+    chilipeppr.load("#com-chilipeppr-flash",
+        "http://fiddle.jshell.net/chilipeppr/90698kax/show/light/",
+
+    function () {
+        console.log("mycallback got called after loading flash msg module");
+        cprequire(["inline:com-chilipeppr-elem-flashmsg"], function (fm) {
+            //console.log("inside require of " + fm.id);
+            fm.init();
+        });
+    });
     
     var testGotoline = function() {
         // send sample gcodeline commands as if the gcode sender widget were sending them
@@ -201,9 +227,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var reader = new FileReader();
                         reader.onload = function () {
                             console.log("opening file. reader:", reader);
+                            console.log ("stringify", JSON.stringify(reader.result, null, 2) );
                             that.openGCodeFromText(reader.result);
                         };
                         reader.readAsText(files[0]);
+                        // reader.readAsArrayBuffer(files[0]);
                     }
                 });
             }
@@ -218,6 +246,17 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 //that.openGCodeFromPath(lastLoaded || 'examples/octocat.gcode');
                 console.log("loading chilipeppr logo");
                 that.openGCodeFromPath(lastLoaded || 'http://www.chilipeppr.com/3d/chilipepprlogo.nc');
+            }
+            
+            var lastFpsRate = localStorage.getItem ('fpsRate');
+            if (lastFpsRate) {
+                console.log("got prior FPS Rate, setting it now:  ", lastFpsRate, "//rk");
+                //this.setFrameRate(parseInt(lastFpsRate) );
+                var fr = parseInt(lastFpsRate);
+                this.setFrameRate(fr);
+                // set css to show selected
+                $('.com-chilipeppr-widget-3dviewer-settings-fr').removeClass('alert-info');
+                $('.com-chilipeppr-widget-3dviewer-settings-fr-' + fr).addClass('alert-info');
             }
 
             // setup toolbar buttons
@@ -1270,6 +1309,17 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var leny = maxy - miny;
             var lenz = maxz - minz;
             console.log("lenx:", lenx, "leny:", leny, "lenz:", lenz);
+            
+            var maxBeforeWarnX = 50;
+            var maxBeforeWarnY = 50;
+            var maxBeforeWarnZ = 50;
+            
+            if (lenx > maxBeforeWarnX || leny > maxBeforeWarnY || lenz > maxBeforeWarnZ) {
+                //alert ("too big!");
+                //chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", "GCode Size Warning", "This GCode looks very large. Are you sure the units are correct?", 6 * 1000);
+            }
+            
+            
             var maxlen = Math.max(lenx, leny, lenz);
             var dist = 2 * maxlen;
             // center camera on gcode objects center pos, but twice the maxlen
@@ -2602,6 +2652,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         setFrameRate: function(rate) {
+            
+            localStorage.setItem ('fpsRate', rate);
+            console.log ("Set fpsRate in storage:  ", rate);
             
             // see if disabled
             if (rate == 0) {
