@@ -13,6 +13,7 @@ var http = require('http'),
   url = require('url'),
   path = require('path'),
   fs = require('fs');
+var qs = require('querystring');
 
 var mimeTypes = {
   "html": "text/html",
@@ -27,7 +28,7 @@ http.createServer(function(req, res) {
 
   var uri = url.parse(req.url).pathname;
   console.log("URL being requested:", uri);
-  
+
   if (uri == "/") {
 
     res.writeHead(200, {
@@ -54,11 +55,61 @@ http.createServer(function(req, res) {
     res.end(finalHtml);
 
   } 
-  else if (uri == "/pushtogithub") {
+  else if (uri == "/uploadscreenshot") {
+    console.log("screenshot being uploaded. ");
     
+    if (req.method == 'POST') {
+        var body = '';
+        req.on('data', function (data) {
+            body += data;
+            // 1e6 === 1 * Math.pow(10, 6) === 1 * 1000000 ~~~ 1MB
+            if (body.length > 1e6) { 
+                // FLOOD ATTACK OR FAULTY CLIENT, NUKE REQUEST
+                req.connection.destroy();
+            }
+        });
+        req.on('end', function () {
+
+            //console.log("body:", body);
+            var POST = qs.parse(body);
+            // use POST
+            console.log("done with POST:", POST);
+            var data_url = POST.imgBase64;
+            var matches = data_url.match(/.*?;base64,(.*)$/);
+            //var ext = matches[1];
+            var base64_data = matches[1];
+            var buffer = new Buffer(base64_data, 'base64');
+            console.log("about to write file...");
+            
+            fs.writeFile("screenshot.png", buffer,  function (err) {
+                if (err) throw err;
+                
+                //res.send('success');
+                var json = {
+                  success: true,
+                  desc: "Saved screenshot.png",
+                  //log: stdout
+                }
+                
+                res.writeHead(200, {
+                  'Content-Type': 'application/json'
+                });
+                res.end(JSON.stringify(json));
+                console.log('done uploading screenshot');
+            });
+
+        });
+    }
+    
+  }
+  else if (uri == "/pushtogithub") {
+
+    var url_parts = url.parse(req.url,true);
+    console.log(url_parts.query);
+
     console.log("/pushtogithub called");
     
-    var stdout = pushToGithubSync()
+    var stdout = pushToGithubSync(url_parts.query.message)
     
     var json = {
       success: true,
@@ -164,6 +215,11 @@ String.prototype.regexIndexOf = function(regex, startpos) {
 var widgetSrc, widget, id, deps, cpdefine, requirejs, cprequire_test;
 var widgetDocs = {};
 
+/**
+ * This method will actually eval your widget.js to bring it into memory
+ * so it can be iterated and parsed using standard javascript. This lets
+ * us generate docs. If your js doesn't eval, this method will crash.
+ */
 var isEvaled = false;
 var evalWidgetJs = function() {
   
@@ -658,6 +714,25 @@ var generateWidgetDocs = function() {
     <script type="text/javascript" charset="utf-8" src="//i2dcui.appspot.com/js/bootstrap/bootstrap_3_1_1.min.js"></script>
     
     <style type='text/css'>
+    div#editor-box {
+      border: 2px dashed #7f7f7f;
+      text-align: center;
+      vertical-align: middle;
+      padding: 10px 10px 10px 10px;
+      line-height: 10px;
+      max-height: 500px;
+      max-width: 100%;
+    }
+      
+    div#editor-box > img {
+      max-width: 500px;
+      max-height: 500px;
+    }
+      
+    .contain {
+      background-size: 100%;
+      background-repeat: no-repeat;
+    }
     </style>
     
     <script type='text/javascript'>
@@ -666,10 +741,12 @@ var generateWidgetDocs = function() {
       $(function() {
       
       function ajaxPushToGithub() {
+        var message = prompt("Please enter your push message", "");
         console.log("pushing to github...");
-        $('.ajax-results').removeClass('hidden').html("Pushing your changes to Github");
+          $('.ajax-results').removeClass('hidden').html("Pushing your changes to Github");
         $.ajax({
-          url: "pushtogithub"
+          url: "pushtogithub",
+          data: { message: message }
         })
         .done(function( data ) {
           if ( console && console.log ) {
@@ -725,10 +802,145 @@ var generateWidgetDocs = function() {
         });
       }
       
+      function ajaxUploadScreenshot() {
+        //var canvas = document.getElementById('canvas' + index);
+        //var dataURL = canvas.toDataURL();
+        var dataURL = $('#editor-box').css('background-image');
+        console.log("ajaxUploadScreenshot..., data:", dataURL);
+        $('.ajax-results').removeClass('hidden').html("Uploading screenshot. ");
+        
+        $.ajax({
+            type: "POST",
+            url: "uploadscreenshot",
+            data: { 
+                imgBase64: dataURL
+            }
+        }).done(function(data) {
+            console.log('all_saved'); 
+            if (data && data.success) {
+              // success
+              $('.ajax-results').html(data.desc);
+            } else {
+              // error 
+              $('.ajax-results').html("<pre>ERROR:" + JSON.stringify(data, null, "\t") + "</pre>");
+            }
+        });
+      }
+      
+      // Created by STRd6
+      // MIT License
+      // jquery.paste_image_reader.js
+      (function ($) {
+          var defaults;
+          $.event.fix = (function (originalFix) {
+              return function (event) {
+                  event = originalFix.apply(this, arguments);
+                  if (event.type.indexOf('copy') === 0 || event.type.indexOf('paste') === 0) {
+                      event.clipboardData = event.originalEvent.clipboardData;
+                  }
+                  return event;
+              };
+          })($.event.fix);
+          defaults = {
+              callback: $.noop,
+              matchType: /image.*/
+          };
+          return $.fn.pasteImageReader = function (options) {
+              if (typeof options === "function") {
+                  options = {
+                      callback: options
+                  };
+              }
+              options = $.extend({}, defaults, options);
+              return this.each(function () {
+                  var $this, element;
+                  element = this;
+                  $this = $(this);
+                  return $this.bind('paste', function (event) {
+                      var clipboardData, found;
+                      found = false;
+                      clipboardData = event.clipboardData;
+                      return Array.prototype.forEach.call(clipboardData.types, function (type, i) {
+                          var file, reader;
+                          if (found) {
+                              return;
+                          }
+                          if (type.match(options.matchType) || clipboardData.items[i].type.match(options.matchType)) {
+                              file = clipboardData.items[i].getAsFile();
+                              reader = new FileReader();
+                              reader.onload = function (evt) {
+                                  return options.callback.call(element, {
+                                      dataURL: evt.target.result,
+                                      event: evt,
+                                      file: file,
+                                      name: file.name
+                                  });
+                              };
+                              reader.readAsDataURL(file);
+                              //snapshoot();
+                              return found = true;
+                          }
+                          backgroundImage
+                      });
+                  });
+              });
+          };
+      })(jQuery);
+      
+      
+      $("html").pasteImageReader(function (results) {
+              var dataURL, filename;
+              filename = results.filename, dataURL = results.dataURL;
+              $data.text(dataURL);
+              $size.val(results.file.size);
+              $type.val(results.file.type);
+              $test.attr('href', dataURL);
+              var img = document.createElement('img');
+              img.src = dataURL;
+              var w = img.width;
+              var h = img.height;
+              $width.val(w); $height.val(h);
+              $("div#editor-box").height(h);
+              return $(".active").css({
+                  backgroundImage: "url(" + dataURL + ")"
+              }).data({ 'width': w, 'height': h });
+          });
+      
+          var $data, $size, $type, $test, $width, $height;
+          $(function () {
+              $data = $('.data');
+              $size = $('.size');
+              $type = $('.type');
+              $test = $('#test');
+              $width = $('#width');
+              $height = $('#height');
+              $('.target').on('click', function () {
+                  var $this = $(this);
+                  var bi = $this.css('background-image');
+                  if (bi != 'none') {
+                      $data.text(bi.substr(4, bi.length - 6));
+                  }
+      
+                  $('.active').removeClass('active');
+                  $this.addClass('active');
+      
+                  $this.toggleClass('contain');
+      
+                  $width.val($this.data('width'));
+                  $height.val($this.data('height'));
+                  if ($this.hasClass('contain')) {
+                      $this.css({ 'width': $this.data('width'), 'height': $this.data('height'), 'z-index': '10' });
+                  } else {
+                      $this.css({ 'width': '', 'height': '', 'z-index': '' });
+                  }
+              });
+          });
+      
       function init() {
         $('.btn-pushtogithub').click(ajaxPushToGithub);
         $('.btn-pullfromgithub').click(ajaxPullFromGithub);
         $('.btn-mergetemplate').click(ajaxMergeFromCpTemplateRepo);
+        $('.btn-uploadscreenshot').click(ajaxUploadScreenshot);
         console.log("Init complete");
       }
       
@@ -749,6 +961,11 @@ var generateWidgetDocs = function() {
       <button class="btn btn-xs btn-default btn-mergetemplate">Merge the ChiliPeppr Template to this Repo</button>
       <div class="hidden well ajax-results" style="margin-bottom:0;">
         Results
+      </div>
+      
+      <p style="padding-top:20px;">Note: Paste image from clipboard here to generate screenshot of widget for docs.</p>
+      <button class="btn btn-xs btn-default btn-uploadscreenshot" style="margin-bottom:5px;">Upload Screenshot</button>
+      <div id="editor-box" class="target" contenteditable="true">
       </div>
       
       <h1 class="page-header" style="margin-top:20px;">$pubsub-id</h1>
@@ -1134,18 +1351,21 @@ var pushToGithub = function() {
   console.log("Pushed to github");
 }
 
-var pushToGithubSync = function() {
+var pushToGithubSync = function(message) {
   
   var proc = require('child_process');
+
+  if(! message)
+    message = "Made some changes to ChiliPeppr widget using Cloud9";
   
   // git add *
   // git commit -m "Made some changes to ChiliPeppr widget using Cloud9"
   // git push
   var stdout = "";
   stdout += "> git add *\n";
-  stdout += '> git commit -m "Made some changes to ChiliPeppr widget using Cloud9"\n';
+  stdout += '> git commit -m "' + message + '"\n';
   stdout += "> git push\n";
-  stdout += proc.execSync('git add *; git commit -m "Made some changes to ChiliPeppr widget using Cloud9"; git push;', { encoding: 'utf8' });
+  stdout += proc.execSync('git add *; git commit -m "' + message + '"; git push;', { encoding: 'utf8' });
   console.log("Pushed to github sync. Stdout:", stdout);
   
   return stdout;

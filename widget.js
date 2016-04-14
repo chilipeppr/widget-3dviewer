@@ -5,11 +5,14 @@
 
 requirejs.config({
     paths: {
-        Three: '//i2dcui.appspot.com/geturl?url=http://threejs.org/build/three.min.js',
+        //Three: '//i2dcui.appspot.com/geturl?url=http://threejs.org/build/three.min.js',
+        // Keep in mind that the /slingshot url does the same as /geturl but it is not cached
+        Three: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/build/three.min.js',
         ThreeTextGeometry: '//i2dcui.appspot.com/js/three/TextGeometry',
         ThreeFontUtils: '//i2dcui.appspot.com/js/three/FontUtils',
         ThreeDetector: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/Detector.js',
-        ThreeTrackballControls: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/controls/TrackballControls.js',
+        //ThreeTrackballControls: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/controls/TrackballControls.js',
+        ThreeTrackballControls: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/examples/js/controls/TrackballControls.js',
         ThreeOrbitControls: '//threejs.org/examples/js/controls/OrbitControls',
         ThreeHelvetiker: '//i2dcui.appspot.com/js/three/threehelvetiker',
         ThreeTypeface: 'https://superi.googlecode.com/svn-history/r1953/trunk/MBrand/MBrand/Scripts/typeface-0.15',
@@ -20,6 +23,7 @@ requirejs.config({
         ThreeTextGeometry: ['Three'],
         ThreeFontUtils: ['Three', 'ThreeTextGeometry'],
         ThreeHelvetiker: ['Three', 'ThreeTextGeometry', 'ThreeFontUtils'],
+        //ThreeHelvetiker: ['Three', 'ThreeTextGeometry'],
         ThreeTrackballControls: ['Three'],
         ThreeTween: ['Three'],
         ThreeSparks: ['Three'],
@@ -2131,6 +2135,22 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
         },
         grid: null, // stores grid
+        gridTurnOff: function() {
+            if (this.grid != null) {
+                console.log("there was a previous grid. remove it. grid:", this.grid);
+                this.sceneRemove(this.grid);
+            } else {
+                console.log("no previous grid.");
+            }
+        },
+        gridTurnOn: function() {
+            if (this.grid != null) {
+                console.log("there was a previous grid. so ignoring request to turn on. grid:", this.grid);
+            } else {
+                console.log("no previous grid. so drawing.");
+                this.drawGrid();
+            }
+        },
         drawGrid: function() {
             
             // remove grid if drawn previously
@@ -2270,7 +2290,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // a fail on the intersectObjects()
             var fov = 70,
                 aspect = element.width() / element.height(),
-                near = 0.001, // 1e-6, //
+                near = 0.01, //01, // 1e-6, //
                 far = 10000,
                 camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
             this.camera = camera;
