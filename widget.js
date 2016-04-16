@@ -2362,7 +2362,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", "No WebGL Found!", "This device/browser does not support WebGL.   Chilipeppr needs WebGL to render the 3D View. We are loading a failback renderer based on HTML5 Canvas, but its performance will be suboptimal.  Consider switching to a device/browser that supports WebGL", 6 * 1000);
                 var renderer = new THREE.CanvasRenderer();
             };
-};
+
             
             this.renderer = renderer;
             //renderer.setClearColor( scene.fog.color, 1 );
