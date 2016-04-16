@@ -2350,7 +2350,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             //     logarithmicDepthBuffer: false
             // });
             
-            var canvas = !! window.CanvasRenderingContext2D;
             var webgl = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
 
             if (webgl) {
@@ -2362,10 +2361,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     alpha: false,
                     logarithmicDepthBuffer: false
                 });
-            } else if (canvas) {
+            } else {
                 console.log('No WebGL Support found!  CRITICAL ERROR! ');
                 chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", "No WebGL Found!", "This device/browser does not support WebGL.   Chilipeppr needs WebGL to render the 3D View. We are loading a failback renderer based on HTML5 Canvas, but its performance will be suboptimal.  Consider switching to a device/browser that supports WebGL", 6 * 1000);
-                renderer = null; //new THREE.CanvasRenderer();
                 $('#' + this.id + ' .youhavenowebgl').removeClass("hidden");
                 return;
             };
