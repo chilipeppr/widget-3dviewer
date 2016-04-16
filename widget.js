@@ -17,7 +17,9 @@ requirejs.config({
         ThreeHelvetiker: '//i2dcui.appspot.com/js/three/threehelvetiker',
         ThreeTypeface: 'https://superi.googlecode.com/svn-history/r1953/trunk/MBrand/MBrand/Scripts/typeface-0.15',
         ThreeTween: '//i2dcui.appspot.com/js/three/tween.min',
-        ThreeBufferGeometryUtils: '//i2dcui.appspot.com/js/three/BufferGeometryUtils'
+        ThreeBufferGeometryUtils: '//i2dcui.appspot.com/js/three/BufferGeometryUtils',
+        ThreeCanvasRenderer: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/examples/js/renderers/CanvasRenderer.js',
+        ThreeProjector: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/examples/js/renderers/Projector.js',
     },
     shim: {
         ThreeTextGeometry: ['Three'],
@@ -28,7 +30,9 @@ requirejs.config({
         ThreeTween: ['Three'],
         ThreeSparks: ['Three'],
         ThreeParticle: ['Three'],
-        ThreeBufferGeometryUtils: ['Three']
+        ThreeBufferGeometryUtils: ['Three'],
+        ThreeCanvasRenderer: ['Three', 'ThreeProjector'],
+        ThreeProjector: ['Three']
     }
 });
 
@@ -2332,6 +2336,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             document.addEventListener( 'touchmove', controls.update.bind( controls ), false );
 
             // Renderer
+            var renderer;
             /*
             var renderer = new THREE.WebGLRenderer({
                 clearColor: 0x000000,
@@ -2351,7 +2356,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             if (webgl) {
                 console.log('WebGL Support found!  Success: CP will work optimally on this device!');
     
-                var renderer = new THREE.WebGLRenderer({
+                renderer = new THREE.WebGLRenderer({
                     antialias: true,
                     preserveDrawingBuffer: false,
                     alpha: false,
@@ -2360,7 +2365,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             } else if (canvas) {
                 console.log('No WebGL Support found!  CRITICAL ERROR! ');
                 chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", "No WebGL Found!", "This device/browser does not support WebGL.   Chilipeppr needs WebGL to render the 3D View. We are loading a failback renderer based on HTML5 Canvas, but its performance will be suboptimal.  Consider switching to a device/browser that supports WebGL", 6 * 1000);
-                var renderer = new THREE.CanvasRenderer();
+                renderer = null; //new THREE.CanvasRenderer();
+                $('#' + this.id + ' .youhavenowebgl').removeClass("hidden");
+                return;
             };
 
             
