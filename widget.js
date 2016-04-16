@@ -2362,7 +2362,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     logarithmicDepthBuffer: false
                 });
             } else {
-                console.log('No WebGL Support found!  CRITICAL ERROR! ');
+                console.error('No WebGL Support found! CRITICAL ERROR!');
                 chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", "No WebGL Found!", "This device/browser does not support WebGL or WebGL has crashed. Chilipeppr needs WebGL to render the 3D View.", 10 * 1000);
                 $('#' + this.id + ' .youhavenowebgl').removeClass("hidden");
                 return;
