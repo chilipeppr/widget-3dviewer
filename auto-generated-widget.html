@@ -1101,6 +1101,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // set css to show selected
             $('.com-chilipeppr-widget-3dviewer-settings-fr').removeClass('alert-info');
             $('.com-chilipeppr-widget-3dviewer-settings-fr-' + fr).addClass('alert-info');
+            this.wakeAnimate();
         },
         gridSize: 1, // global property for size of grid. default to 1 (shapeoko rough size)
         setupGridSizeMenu: function() {
@@ -2752,7 +2753,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             // if 3d viewer disabled, exit
             if (this.animEnable == false) {
-                this.fpsEl.html('<span class="alert-danger">Disabled</span>');
+                this.fpsEl.html('<span class="alert-danger" style="font-size:12px;">Manually Disabled. Go to cog wheel icon to choose a frame rate to re-enable.</span>');
                 return;
             }
             
@@ -2774,7 +2775,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.fpsCounterInterval = null;
             console.log("checking if anim is disabled. this.animEnable:", this.animEnable);
             if (this.animEnable == false) {
-                this.fpsEl.html('<span class="alert-danger">Disabled</span>');
+                this.fpsEl.html('<div class="alert-danger" style="font-size:12px;line-height: 12px;padding: 6px;">Manually Disabled. Go to cog wheel icon to choose a frame rate to re-enable.</div>');
             } else {
                 // set fps to just a dash
                 this.fpsEl.html("-&nbsp;fps");
