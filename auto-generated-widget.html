@@ -2298,8 +2298,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             widthHeightOfGrid = widthHeightOfGrid * this.gridSize;
             
             // draw grid
-            var helper = new THREE.GridHelper(widthHeightOfGrid, subSectionsOfGrid);
-            helper.setColors(0x0000ff, 0x808080);
+            var helper = new THREE.GridHelper(widthHeightOfGrid, subSectionsOfGrid, 0x0000ff, 0x808080);
+            // helper.setColors(0x0000ff, 0x808080);
             helper.position.y = 0;
             helper.position.x = 0;
             helper.position.z = 0;
