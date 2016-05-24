@@ -7,7 +7,8 @@ requirejs.config({
     paths: {
         //Three: '//i2dcui.appspot.com/geturl?url=http://threejs.org/build/three.min.js',
         // Keep in mind that the /slingshot url does the same as /geturl but it is not cached
-        Three: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/build/three.min.js',
+        // Three: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/build/three.min.js',
+        Three: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/build/three.js',
         ThreeTextGeometry: '//i2dcui.appspot.com/js/three/TextGeometry',
         ThreeFontUtils: '//i2dcui.appspot.com/js/three/FontUtils',
         ThreeDetector: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/Detector.js',
