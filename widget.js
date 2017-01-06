@@ -5,41 +5,33 @@
 
 requirejs.config({
     paths: {
-        //Three: '//i2dcui.appspot.com/geturl?url=http://threejs.org/build/three.min.js',
-        // Keep in mind that the /slingshot url does the same as /geturl but it is not cached
-        // Three: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/build/three.min.js',
-        // Three: '//i2dcui.appspot.com/geturl?url=http://threejs.org/build/three.js',
-        Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r76/three',
-        ThreeTextGeometry: '//i2dcui.appspot.com/js/three/TextGeometry',
-        ThreeFontUtils: '//i2dcui.appspot.com/js/three/FontUtils',
-        ThreeDetector: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/Detector.js',
-        //ThreeTrackballControls: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/controls/TrackballControls.js',
-        // Latest release
-        // ThreeTrackballControls: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/examples/js/controls/TrackballControls.js',
-        // r79 (to solve that mousewheel zoom started not working in r80, so had to force to older version. eventually they'll fix the bug cuz i filed it)
-        // ThreeTrackballControls: '//i2dcui.appspot.com/slingshot?url=http://rawgit.com/mrdoob/three.js/r79/examples/js/controls/TrackballControls.js',
-        ThreeTrackballControls: '//i2dcui.appspot.com/geturl?url=http://rawgit.com/mrdoob/three.js/r79/examples/js/controls/TrackballControls.js',
-        ThreeOrbitControls: '//threejs.org/examples/js/controls/OrbitControls',
-        ThreeHelvetiker: '//i2dcui.appspot.com/js/three/threehelvetiker',
-        ThreeTypeface: 'https://superi.googlecode.com/svn-history/r1953/trunk/MBrand/MBrand/Scripts/typeface-0.15',
-        ThreeTween: '//i2dcui.appspot.com/js/three/tween.min',
-        ThreeBufferGeometryUtils: '//i2dcui.appspot.com/js/three/BufferGeometryUtils',
-        ThreeCanvasRenderer: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/renderers/CanvasRenderer.js',
-        ThreeProjector: '//i2dcui.appspot.com/geturl?url=http://threejs.org/examples/js/renderers/Projector.js',
+        Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three',
+        
+        ThreeTrackballControls: 'https://cdn.rawgit.com/mrdoob/three.js/dev/examples/js/controls/TrackballControls',
+        ThreeTween: 'https://cdn.rawgit.com/tweenjs/tween.js/master/src/Tween',
+        
+        ThreeProjector: 'https://cdn.rawgit.com/mrdoob/three.js/dev/examples/js/renderers/Projector',
     },
     shim: {
-        ThreeTextGeometry: ['Three'],
-        ThreeFontUtils: ['Three', 'ThreeTextGeometry'],
-        ThreeHelvetiker: ['Three', 'ThreeTextGeometry', 'ThreeFontUtils'],
-        //ThreeHelvetiker: ['Three', 'ThreeTextGeometry'],
-        ThreeTrackballControls: ['Three'],
-        ThreeTween: ['Three'],
-        ThreeSparks: ['Three'],
-        ThreeParticle: ['Three'],
-        ThreeBufferGeometryUtils: ['Three'],
-        ThreeCanvasRenderer: ['Three', 'ThreeProjector'],
-        ThreeProjector: ['Three']
+        Three: {
+            exports: 'THREE'
+        },
+        ThreeTrackballControls: {
+            deps: ['Three'],
+        },
+        ThreeTween: {
+            deps: ['Three'],
+        },
+        ThreeProjector: {
+            deps: ['Three'],
+        },
     }
+});
+
+// Hax to bring us our global THREE object
+define('Three', ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.js'], function ( THREE ) {
+  window.THREE = THREE;
+  return THREE;
 });
 
 cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
@@ -141,7 +133,7 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
     console.log("3d viewer initted");
 } /*end_test*/ );
 
-cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 'ThreeDetector', 'ThreeTrackballControls', 'ThreeTween', 'ThreeHelvetiker', 'ThreeBufferGeometryUtils'], function () {
+cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 'ThreeTrackballControls', 'ThreeTween', 'ThreeProjector'], function () {
 
     return {
 
@@ -246,6 +238,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 });
             }
             
+            
+            // render options
+            this.disableAA = (localStorage.getItem('disable-aa') == 'true') ? true : false;
+            this.showShadow = (localStorage.getItem('toolhead-shadow') == 'true' ? true : false);
+            
             that.scene = that.createScene($('#com-chilipeppr-widget-3dviewer-renderArea'));
             var lastImported = localStorage.getItem('last-imported');
             var lastLoaded = localStorage.getItem('last-loaded');
@@ -265,12 +262,16 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 var fr = parseInt(lastFpsRate);
                 this.setFrameRate(fr);
                 // set css to show selected
-                $('.com-chilipeppr-widget-3dviewer-settings-fr').removeClass('alert-info');
-                $('.com-chilipeppr-widget-3dviewer-settings-fr-' + fr).addClass('alert-info');
             }
-
+            
+            // download our font
+            this.downloadFont();
+            
             // setup toolbar buttons
             this.btnSetup();
+            
+            // set menu highlights
+            this.setCogMenuState();
             
             this.forkSetup();
             //this.setDetails("blah");
@@ -298,6 +299,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.setupFpsMenu();
             this.initJog(); //this.setupJog();
             this.initInspect();
+            
+            this.drawAxesToolAndExtents()
             
             // hide the pan/zoom/orbit msg after 1 minute
             setTimeout(function() {
@@ -566,39 +569,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // set the last object to this one
                     this.inspectLastObj = o;
                     
-                    // remove any previous
-                    /*
-                    var that = this;
-                    this.inspectLastDecorateGroup.traverse(function(o) {
-                        that.inspectLastDecorateGroup.remove(o);
-                    });
-                    
-                
-                    
-                    // draw a bounding box
-                    var bbox = new THREE.BoundingBoxHelper( o, 0xff0000 );
-                    bbox.update();
-                    bbox.object.material.opacity = 0.1;
-                    bbox.object.material.transparent = true;
-                    bbox.material.opacity = 0.1;
-                    bbox.material.transparent = true;
-                    console.log("bbox:", bbox);
-                    //this.sceneAdd( bbox );
-                    this.inspectLastDecorateGroup.add(bbox);
-                    */
-                    
-                    // clone it, make it pretty
-                    /*
-                    var newObj = obj.object.clone();
-                    newObj.material.opacity = 1.0;
-                    
-                    this.inspectLastDecorateGroup.add(newObj);
-                    */
-                    
                 }
-                
-                
-                //io[0].object.material.opacity = 1.0;
                 
                 var pt = io[0].point;
                 // move arrow
@@ -803,17 +774,23 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             console.log("doing setupJogRaycaster"); 
             console.log("mimic grid size:", this.grid);
-            var helper = new THREE.BoundingBoxHelper(this.grid, 0xff0000);
-            helper.update();
+            
+            var helper = new THREE.BoxHelper(this.grid, 0xff0000);
+            
+            var box = new THREE.Box3();
+            box.setFromObject(helper);
+            
+            //helper.update();
+            
             // If you want a visible bounding box
             //scene.add(helper);
             // If you just want the numbers
-            console.log(helper.box.min);
-            console.log(helper.box.max);
+            console.log(box.min);
+            console.log(box.max);
             
-            console.log("boundingbox:", helper.box);
-            var w = helper.box.max.x - helper.box.min.x;
-            var h = helper.box.max.y - helper.box.min.y;
+            console.log("boundingbox:", box);
+            var w = box.max.x - box.min.x;
+            var h = box.max.y - box.min.y;
             
             // create plane at z 0 to project onto
             var geometry = new THREE.PlaneBufferGeometry( w, h );
@@ -898,7 +875,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             jogArrowGrp.add( mesh );
             
             // draw dotted lines from jog tip and shadow
-            var lineMat = new THREE.LineDashedMaterial( { color: 0x000000, xdashSize: 45, xgapSize: 45 } );
+            var lineMat = new THREE.LineDashedMaterial( { color: 0x000000, dashSize: 45, gapSize: 45 } );
             var lineGeo = new THREE.Geometry();
             lineGeo.vertices.push(new THREE.Vector3( 0, 0, 0 ));
             lineGeo.vertices.push(new THREE.Vector3( 0, 0, posZ ));
@@ -968,7 +945,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var raycaster = new THREE.Raycaster( origin, dir );
             //console.log("mouse:", mouse, "raycaster:", raycaster);
             var io = raycaster.intersectObject(this.jogPlane, false);
-            //console.log("io:", io);
+            console.log("io:", io);
             
             if (io.length > 0) {
                 // we hit the jog plane
@@ -978,13 +955,58 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 this.jogCurPos = pt.clone();
             }
         },
-        showShadow: false,
+        showShadow: true,
+        
         setupCogMenu: function() {
+            $('.com-chilipeppr-widget-3dviewer-settings-aa').click( this.onToggleAAClick.bind(this));
             $('.com-chilipeppr-widget-3dviewer-settings-shadows').click( this.onToggleShadowClick.bind(this));
+            
+        },
+        setCogMenuState: function() {
+           
+            var toggleShadowItem = $('.com-chilipeppr-widget-3dviewer-settings-shadows');
+            if (this.showShadow && !toggleShadowItem.hasClass('alert-info')) {
+                toggleShadowItem.addClass('alert-info');
+            } else if (!this.showShadow) {
+                toggleShadowItem.removeClass('alert-info');
+            }
+            
+            console.log('disable-aa is ' + this.disableAA);
+            var toggleAAItem = $('.com-chilipeppr-widget-3dviewer-settings-aa');
+            if (!this.disableAA && !toggleAAItem.hasClass('alert-info')) {
+                toggleAAItem.addClass('alert-info');
+            } else if (this.disableAA) {
+                toggleAAItem.removeClass('alert-info');
+            }
+            
+            $('.com-chilipeppr-widget-3dviewer-settings-fr').removeClass('alert-info');
+            $('.com-chilipeppr-widget-3dviewer-settings-fr-' + this.fpsRate).addClass('alert-info');
+            
+        },
+        onToggleAAClick: function(evt, param) {
+            console.log("got onToggleAAClick. evt:", evt, "param:", param);
+            this.disableAA = !this.disableAA; // toggle
+            
+            localStorage.setItem('disable-aa', (this.disableAA) ? 'true' : 'false');
+            console.log ("Set disable-aa in storage:  ", (this.disableAA) ? 'true' : 'false');
+            
+            this.setCogMenuState();
+            
+            // you cant dynamically change the state of AA
+            //this.renderer.antialias = !this.disableAA;
+            
+            $('#com-chilipeppr-widget-3dviewer-aa-notice').modal();
         },
         onToggleShadowClick: function(evt, param) {
             console.log("got onToggleShadowClick. evt:", evt, "param:", param);
             this.showShadow = !this.showShadow; // toggle
+            
+            localStorage.setItem('toolhead-shadow', (this.showShadow) ? 'true' : 'false');
+            console.log ("Set toolhead-shadow in storage:  ", (this.showShadow) ? 'true' : 'false');
+            
+            this.renderer.shadowMap.enabled = this.showShadow;
+            
+            this.setCogMenuState();
             this.drawToolhead();
         },
         setupFpsMenu: function() {
@@ -1000,11 +1022,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             console.log("got onFpsClick. evt:", evt, "param:", param);
             var fr = evt.data;
             this.setFrameRate(fr);
-            // set css to show selected
-            $('.com-chilipeppr-widget-3dviewer-settings-fr').removeClass('alert-info');
-            $('.com-chilipeppr-widget-3dviewer-settings-fr-' + fr).addClass('alert-info');
+            
+            this.setCogMenuState();
             this.wakeAnimate();
         },
+        
+        
         gridSize: 1, // global property for size of grid. default to 1 (shapeoko rough size)
         setupGridSizeMenu: function() {
             $('.com-chilipeppr-widget-3dviewer-gridsizing-1x').click(1, this.onGridSizeClick.bind(this));
@@ -1282,24 +1305,29 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // lets override the bounding box with a newly
             // generated one
             // get its bounding box
-            var helper = new THREE.BoundingBoxHelper(this.object, 0xff0000);
-            helper.update();
+            var helper = new THREE.BoxHelper(this.object, 0xff0000);
+                        
+            var box = new THREE.Box3();
+            box.setFromObject(helper);
+            
+            //helper.update();
+            
             //if (this.bboxHelper)
             //    this.scene.remove(this.bboxHelper);
             this.bboxHelper = helper;
             // If you want a visible bounding box
             //this.scene.add(this.bboxHelper);
-            console.log("helper bbox:", helper);
+            console.log("helper bbox:", box);
             
-            var minx = helper.box.min.x;
-            var miny = helper.box.min.y;
-            var maxx = helper.box.max.x;
-            var maxy = helper.box.max.y;
-            var minz = helper.box.min.z;
-            var maxz = helper.box.max.z;
+            var minx = box.min.x;
+            var miny = box.min.y;
+            var maxx = box.max.x;
+            var maxy = box.max.y;
+            var minz = box.min.z;
+            var maxz = box.max.z;
             
             var ud = this.object.userData;
-            ud.bbox2 = helper.box;
+            ud.bbox2 = box;
             ud.center2.x = minx + ((maxx - minx) / 2);
             ud.center2.y = miny + ((maxy - miny) / 2);
             ud.center2.z = minz + ((maxz - minz) / 2);
@@ -1512,7 +1540,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             var lineMat = new THREE.LineBasicMaterial({
                 color: 0xff0000,
-                lineWidth: 1,
                 transparent: true,
                 opacity: 1,
             });
@@ -1660,85 +1687,56 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.tween = tween;
             this.tweenIndex = 0;
             this.tween.start();
-
-            /*
-            //var mylines = this.object.userData.lines.slice
-            lastTween = tween;
-            var lineMat = new THREE.LineBasicMaterial({
-                        color: 0xFF0000,
-                        lineWidth: 1,
-                        blending: THREE.AdditiveBlending,
-                        transparent: true,
-                        opacity: 1,
-                    });
-            $.each(this.object.userData.lines.slice(1), function(val, item) {
-                //console.log(val,item); 
-                var ll = lines[val].p2;
-                var cl = item.p2;
-                //console.log(ll, cl);
-                //var lineHighlight;
-                var curTween = new TWEEN.Tween( { x: ll.x, y: ll.y, z: ll.z} )
-                .to( {x: cl.x, y: cl.y, z: cl.z}, 1000 / that.tweenSpeed)
-                //.easing( TWEEN.Easing.Quadratic.InOut )
-                .onStart( function() {
-                    that.tween = curTween;
-                    //console.log("onStart");
-                    // create a new line to show path
-                    var lineGeo = new THREE.Geometry();
-                    lineGeo.vertices.push(new THREE.Vector3(ll.x, ll.y, ll.z), new THREE.Vector3(cl.x, cl.y, cl.z));
-                    var line = new THREE.Line(lineGeo, lineMat);
-                    line.type = THREE.Lines;
-                    that.tweenHighlight = line;
-                    that.scene.add(line);
-                })
-                .onComplete( function() {
-                    //console.log("onComplete");
-                    that.scene.remove(that.tweenHighlight);
-                })
-                .onUpdate( function () {
-                    that.toolhead.position.x = this.x;
-                    that.toolhead.position.y = this.y;
-                    that.toolhead.position.z = this.z + 20;
-                    that.lookAtToolHead();
-                } );
-                lastTween.chain(curTween);
-                lastTween = curTween;
-            });
+        },
+        
+        textFont: false,
+        downloadFont: function() {
+            console.log('downloading font');
             
-            tween.start();
-            */
+            var that = this;
+            $.ajax({
+                url: 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json',
+                async: false,
+                dataType: 'json',
+                success: function(response) {
+                    that.textFont = new THREE.Font(response);
+                    if (that.textFont) {
+                        console.log('font download success');
+                    }
+                }
+            });
         },
         makeText: function(vals) {
-            var shapes, geom, mat, mesh;
-            
-            console.log("Do we have the global ThreeHelvetiker font:", ThreeHelvetiker);
-            console.log("THREE.FontUtils:", THREE.FontUtils);
-            
-            if (!THREE.FontUtils) {
-                console.error("THREE.FontUtils not defined per bug in r73 of three.js. So not making text.");
+            if (!this.textFont) {
+                console.log('no font defined');
                 return;
             }
             
-            THREE.FontUtils.loadFace(ThreeHelvetiker);
-            shapes = THREE.FontUtils.generateShapes( vals.text, {
-                font: "helvetiker",
-                //weight: "normal",
-                size: vals.size ? vals.size : 10
-            } );
-            geom = new THREE.ShapeGeometry( shapes );
-            mat = new THREE.MeshBasicMaterial({
+            var shapes, geom, mat, mesh;
+            console.log('about to make text: ', vals.text);
+            
+            var textGeometry = new THREE.TextGeometry(vals.text, {
+                font: this.textFont,
+                size: vals.size ? vals.size : 10,
+                height: 0.1,
+                curveSegments: 12,
+            });
+            
+            textMaterial = new THREE.MeshBasicMaterial({
                 color: vals.color,
                 transparent: true,
                 opacity: vals.opacity ? vals.opacity : 0.5,
             });
-            mesh = new THREE.Mesh( geom, mat );
             
+            mesh = new THREE.Mesh(textGeometry, textMaterial);
+        
             mesh.position.x = vals.x;
             mesh.position.y = vals.y;
             mesh.position.z = vals.z;
+        
+            mesh.castShadow = false;
             
             return mesh;
-            
         },
         decorate: null, // stores the decoration 3d objects
         decorateExtents: function() {
@@ -1751,21 +1749,29 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 console.log("no previous decorate extents.");
             }
             
+            if (!this.object) {
+                return;
+            }
+            
             // get its bounding box
-            console.log("about to do THREE.BoundingBoxHelper on this.object:", this.object);
-            var helper = new THREE.BoundingBoxHelper(this.object, 0xff0000);
-            helper.update();
+            console.log("about to do THREE.BoxHelper on this.object:", this.object);
+            var helper = new THREE.BoxHelper(this.object, 0xff0000);
+            
+            var box = new THREE.Box3();            
+            box.setFromObject(helper);
+            
+            //helper.update();
             this.bboxHelper = helper;
             // If you want a visible bounding box
             //this.scene.add(helper);
-            console.log("helper bbox:", helper);
+            console.log("helper bbox:", box);
             
             var color = '#0d0d0d';
             //var color = '#ff0000';
             
             var material = new THREE.LineDashedMaterial({ 
                 vertexColors: false, color: color,
-                dashSize: this.getUnitVal(1), gapSize: this.getUnitVal(1), linewidth: 1,
+                dashSize: this.getUnitVal(1), gapSize: this.getUnitVal(1), linewidth: this.lineWidth,
                 transparent: true,
                 opacity: 0.3,
             });
@@ -1774,12 +1780,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var z = 0;
             var offsetFromY = this.getUnitVal(-4); // this means we'll be below the object by this padding
             var lenOfLine = this.getUnitVal(5);
-            var minx = helper.box.min.x;
-            var miny = helper.box.min.y;
-            var maxx = helper.box.max.x;
-            var maxy = helper.box.max.y;
-            var minz = helper.box.min.z;
-            var maxz = helper.box.max.z;
+            var minx = box.min.x;
+            var miny = box.min.y;
+            var maxx = box.max.x;
+            var maxy = box.max.y;
+            var minz = box.min.z;
+            var maxz = box.max.z;
             
             var lineGeo = new THREE.Geometry();
             lineGeo.vertices.push(
@@ -1792,7 +1798,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 
             );
             lineGeo.computeLineDistances();
-            var line = new THREE.Line(lineGeo, material, THREE.LinePieces);
+            var line = new THREE.LineSegments(lineGeo, material);
             line.type = THREE.Lines;
             
             // Draw text label of length
@@ -1821,7 +1827,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 new THREE.Vector3(minx + offsetFromX, maxy, z)
             );
             lineGeo2.computeLineDistances();
-            var line2 = new THREE.Line(lineGeo2, material, THREE.LinePieces);
+            var line2 = new THREE.LineSegments(lineGeo2, material);
             line2.type = THREE.Lines;
             
             // Draw text label of length
@@ -1857,7 +1863,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 
             );
             zlineGeo.computeLineDistances();
-            var zline = new THREE.Line(zlineGeo, material, THREE.LinePieces);
+            var zline = new THREE.LineSegments(zlineGeo, material);
             zline.type = THREE.Lines;
             
             // Draw text label of z height
@@ -2033,40 +2039,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             // TOOLHEAD WITH SHADOW
             var toolheadgrp = new THREE.Object3D();
-            
-            // SHADOWS
-            if (this.showShadow) {
-                var light = new THREE.DirectionalLight(0xffffff);
-                //var light = new THREE.SpotLight(0xffffff);
-                light.position.set(0, 60, 60);
-                //light.rotation.x = 90 * Math.PI / 180;
-                //light.lookat(
-                //light.target.position.set(0, 0, 0);
-                light.castShadow = true;
-                light.onlyShadow = true;
-                light.shadowDarkness = 0.05;
-                //light.shadowCameraVisible = true; // only for debugging
-                // these six values define the boundaries of the yellow box seen above
-                light.shadowCameraNear = 0;
-                light.shadowCameraFar = this.getUnitVal(1000);
-                light.shadowCameraLeft = this.getUnitVal(-5);
-                light.shadowCameraRight = this.getUnitVal(5);
-                light.shadowCameraTop = 0;
-                light.shadowCameraBottom = this.getUnitVal(-35);
-                //scene.add(light);
-                toolheadgrp.add(light);
-                
-                var light2 = light.clone();
-                light2.position.set(60, 0, 60);
-                light2.shadowCameraLeft = 0; //-5;
-                light2.shadowCameraRight = this.getUnitVal(-35); //5;
-                light2.shadowCameraTop = this.getUnitVal(-5); //0;
-                light2.shadowCameraBottom = this.getUnitVal(5); //-35;
-                light2.shadowDarkness = 0.03;
-                //light2.rotation.z = 90 * Math.PI / 180;
-                toolheadgrp.add(light2);
-            }
-            
+
             // ToolHead Cylinder
             // API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
             var cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0, 5, 40, 15, 1, false), new THREE.MeshNormalMaterial());
@@ -2085,60 +2058,41 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             toolheadgrp.add(cylinder);
             
             if (this.showShadow) {
-                // mesh plane to receive shadows
-                var planeFragmentShader = [
-                    
-                    "uniform vec3 diffuse;",
-                    "uniform float opacity;",
-                    
-                    //THREE.ShaderChunk[ "color_pars_fragment" ],
-                    //THREE.ShaderChunk[ "map_pars_fragment" ],
-                    //THREE.ShaderChunk[ "lightmap_pars_fragment" ],
-                    //THREE.ShaderChunk[ "envmap_pars_fragment" ],
-                    //THREE.ShaderChunk[ "fog_pars_fragment" ],
-                    THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
-                    //THREE.ShaderChunk[ "specularmap_pars_fragment" ],
-                    
-                    "void main() {",
-                    
-                    "gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );",
-                    
-                    //THREE.ShaderChunk[ "map_fragment" ],
-                    //THREE.ShaderChunk[ "alphatest_fragment" ],
-                    //THREE.ShaderChunk[ "specularmap_fragment" ],
-                    //THREE.ShaderChunk[ "lightmap_fragment" ],
-                    //THREE.ShaderChunk[ "color_fragment" ],
-                    //THREE.ShaderChunk[ "envmap_fragment" ],
-                    THREE.ShaderChunk[ "shadowmap_fragment" ],
-                    //THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
-                    //THREE.ShaderChunk[ "fog_fragment" ],
-                    
-                    "gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 - shadowColor.x );",
-                    
-                    "}"
-                    
-                ].join("\n");
+                var light = new THREE.DirectionalLight(0xffffff);
+                light.position.set(0, 100, 100);
                 
-                var planeMaterial = new THREE.ShaderMaterial({
-                    uniforms: THREE.ShaderLib['basic'].uniforms,
-                    vertexShader: THREE.ShaderLib['basic'].vertexShader,
-                    fragmentShader: planeFragmentShader,
-                    color: 0x0000FF, transparent: true
-                });
+                light.shadow.camera.near = 0;
+                light.shadow.camera.far = this.getUnitVal(1000);
+                light.shadow.camera.left = this.getUnitVal(-50);
+                light.shadow.camera.right = this.getUnitVal(50);
+                light.shadow.camera.top = 0;
+                light.shadow.camera.bottom = this.getUnitVal(-50);
                 
-                var planeW = 50; // pixels
-                var planeH = 50; // pixels 
-                var numW = 50; // how many wide (50*50 = 2500 pixels wide)
-                var numH = 50; // how many tall (50*50 = 2500 pixels tall)
-                var plane = new THREE.Mesh( new THREE.PlaneGeometry( planeW*50, planeH*50, planeW, planeH ), new   THREE.MeshLambertMaterial( { color: 0xffffff, wireframe: false, transparent: true, opacity: 0.5 } ) );
-                var plane = new THREE.Mesh( new THREE.PlaneGeometry( planeW*50, planeH*50, planeW, planeH ), planeMaterial );
-                //plane.castShadow = false;
+                light.castShadow = true;
+                
+                light.shadow.mapSize.width = 2048;
+                light.shadow.mapSize.height = 2048;
+                
+                
+                toolheadgrp.add(light);
+                
+                
+                // shadow plane
+                var planeGeometry = new THREE.PlaneGeometry(2000, 2000);
+                
+                var planeMaterial = new THREE.ShadowMaterial();
+                planeMaterial.opacity = 0.1;
+                planeMaterial.transparent = true;
+                planeMaterial.depthWrite = false;
+                planeMaterial.depthTest = false;
+                
+                //var plane = new THREE.Mesh( new THREE.PlaneGeometry( planeW*50, planeH*50, planeW, planeH ), new   THREE.MeshLambertMaterial( { color: 0xffffff, wireframe: false, transparent: true, opacity: 0.5 } ) );
+                var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+                
                 plane.position.z = 0;
-                plane.receiveShadow = true;
                 
-                console.log("toolhead plane:", plane);
-                //scene.add(plane);
-                //toolheadgrp.add(plane);
+                plane.castShadow = false;
+                plane.receiveShadow = true;
             }
             
             // scale the whole thing to correctly match mm vs inches
@@ -2270,10 +2224,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
         },
         colorBackground: 0xeeeeee, // this is the background color of the 3d viewer
+        disableAA: false,
         createScene: function (element) {
 
             console.log("inside createScene: element:", element);
-            if (!Detector.webgl) Detector.addGetWebGLMessage();
 
             // store element on this object
             this.element = element;
@@ -2294,15 +2248,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             ].forEach(function (position) {
                 var light = new THREE.DirectionalLight(position[3]);
                 light.position.set(position[0], position[1], position[2]).normalize();
-                /*if (ctr == 0) {
-                    light.castShadow = true;
-                    light.shadowDarkness = 0.95;
-                    light.shadowCameraRight     =  5;
-                    light.shadowCameraLeft     = -5;
-                    light.shadowCameraTop      =  5;
-                    light.shadowCameraBottom   = -5;
-                    light.shadowCameraVisible = true;
-                }*/
                 scene.add(light);
                 ctr++;
             });
@@ -2310,16 +2255,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // Camera...
             // If you make the near and far too much you get
             // a fail on the intersectObjects()
-            var fov = 70,
+            var fov = 65,
                 aspect = element.width() / element.height(),
-                near = 0.01, //01, // 1e-6, //
-                far = 10000,
+                near = 1, //01, // 1e-6, //
+                far = 1000,
                 camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+            
             this.camera = camera;
             camera.rotationAutoUpdate = true;
             camera.position.x = 10;
             camera.position.y = -100;
             camera.position.z = 200;
+            
             scene.add(camera);
 
             // Controls
@@ -2329,9 +2276,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             controls = new THREE.TrackballControls(camera, element[0]);
             this.controls = controls; // set property for later use
             //controls = new THREE.OrbitControls(camera);
+            
             controls.noPan = false;
             controls.dynamicDampingFactor = 0.99; //0.15;
             controls.rotateSpeed = 2.0;
+            
             //controls.staticMoving = true;
             //controls.target.x = 50;
             //controls.target.y = 100;
@@ -2344,28 +2293,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             // Renderer
             var renderer;
-            /*
-            var renderer = new THREE.WebGLRenderer({
-                clearColor: 0x000000,
-                clearAlpha: 1
-            });
-            */
-            // var renderer = new THREE.WebGLRenderer({
-            //     antialias: true,
-            //     preserveDrawingBuffer: false,
-            //     alpha: false,
-            //     logarithmicDepthBuffer: false
-            // });
-            
             var webgl = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
 
             if (webgl) {
                 console.log('WebGL Support found!  Success: CP will work optimally on this device!');
     
                 renderer = new THREE.WebGLRenderer({
-                    antialias: true,
+                    antialias: !this.disableAA,
                     preserveDrawingBuffer: false,
-                    alpha: false,
+                    alpha: true,
                     logarithmicDepthBuffer: false
                 });
             } else {
@@ -2377,191 +2313,20 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             
             this.renderer = renderer;
-            //renderer.setClearColor( scene.fog.color, 1 );
-            //renderer.setClearColor(0xeeeeee, 1);
+            
             renderer.setClearColor(this.colorBackground, 1);
+            
             renderer.setSize(element.width(), element.height());
             renderer.setPixelRatio( window.devicePixelRatio );
+            
             element.append(renderer.domElement);
             //renderer.autoClear = true;
             //renderer.clear();
             
             // cast shadows
-            renderer.shadowMapEnabled = true;
-            // to antialias the shadow
-            renderer.shadowMapSoft = true;
-            /*
-            renderer.shadowCameraNear = 3;
-            renderer.shadowCameraFar = camera.far;
-            renderer.shadowCameraFov = 50;
-            */
-            /*
-            renderer.shadowMapBias = 0.0039;
-            renderer.shadowMapDarkness = 1.0;
-            renderer.shadowMapWidth = 1024;
-            renderer.shadowMapHeight = 1024;
-            */
+            renderer.shadowMap.enabled = this.showShadow;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-            // Arrow Helper
-            /*
-            var dir = new THREE.Vector3( 1, 0, 0 );
-            var origin = new THREE.Vector3( 0, 0, 0 );
-            var length = 100;
-            var hex = 0xffff00;
-            
-            var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
-            scene.add( arrowHelper );
-            */
-
-            //scene.add( new THREE.PointLightHelper( light, 5 ) );
-            // Show grid
-
-            /* MOVED TO METHOD
-            var helper = new THREE.GridHelper(200, 10);
-            helper.setColors(0x0000ff, 0x808080);
-            helper.position.y = 0;
-            helper.position.x = 0;
-            helper.position.z = 0;
-            helper.rotation.x = 90 * Math.PI / 180;
-            helper.material.opacity = 0.2;
-            helper.material.transparent = true;
-            helper.receiveShadow = true;
-            console.log("helper:", helper);
-            scene.add(helper);
-            */
-            //this.drawGrid();
-            
-            /* MOVED TO METHOD
-            // TOOLHEAD WITH SHADOW
-            var toolheadgrp = new THREE.Object3D();
-            
-            // SHADOWS
-            var light = new THREE.DirectionalLight(0xffffff);
-            //var light = new THREE.SpotLight(0xffffff);
-            light.position.set(0, 60, 60);
-            //light.rotation.x = 90 * Math.PI / 180;
-            //light.lookat(
-            //light.target.position.set(0, 0, 0);
-            light.castShadow = true;
-            light.onlyShadow = true;
-            light.shadowDarkness = 0.05;
-            //light.shadowCameraVisible = true; // only for debugging
-            // these six values define the boundaries of the yellow box seen above
-            light.shadowCameraNear = 0;
-            light.shadowCameraFar = 1000;
-            light.shadowCameraLeft = -5;
-            light.shadowCameraRight = 5;
-            light.shadowCameraTop = 0;
-            light.shadowCameraBottom = -35;
-            //scene.add(light);
-            toolheadgrp.add(light);
-            
-            var light2 = light.clone();
-            light2.position.set(60, 0, 60);
-            light2.shadowCameraLeft = 0; //-5;
-            light2.shadowCameraRight = -35; //5;
-            light2.shadowCameraTop = -5; //0;
-            light2.shadowCameraBottom = 5; //-35;
-            light2.shadowDarkness = 0.03;
-            //light2.rotation.z = 90 * Math.PI / 180;
-            toolheadgrp.add(light2);
-
-            // ToolHead Cylinder
-            // API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
-            var cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0, 5, 40, 15, 1, false), new THREE.MeshNormalMaterial());
-            cylinder.overdraw = true;
-            cylinder.rotation.x = -90 * Math.PI / 180;
-            cylinder.position.z = 20;
-            //cylinder.position.z = 40;
-            cylinder.material.opacity = 0.5;
-            cylinder.material.transparent = true;
-            cylinder.castShadow = true;
-            //cylinder.receiveShadow = true;
-            console.log("toolhead cone:", cylinder);
-            //scene.add(cylinder);
-            
-            //light.shadowCamera.lookAt(cylinder);
-
-            toolheadgrp.add(cylinder);
-            
-            this.toolhead = toolheadgrp;
-            scene.add(toolheadgrp);
-            */
-            //this.drawToolhead();
-            
-
-            /*
-            // sparks
-            var particleGroup = new SPE.Group({
-                texture: '', 
-                maxAge: 1,
-                colorize: 1,
-                transparent: 1,
-                alphaTest: 0.5,
-                depthWrite: false,
-                depthTest: true,
-                blending: THREE.NormalBlending
-            });
-
-            var emitter = new SPE.Emitter({
-                position: new THREE.Vector3(0, 0, 0),
-                positionSpread: new THREE.Vector3( 0, 0, 1 ),
-
-                acceleration: new THREE.Vector3(0, -1, 0),
-                accelerationSpread: new THREE.Vector3( 1, 0, 1 ),
-
-                velocity: new THREE.Vector3(0, 0, 1),
-                velocitySpread: new THREE.Vector3(1, 1, 1),
-
-                colorStart: new THREE.Color('red'),
-                colorEnd: new THREE.Color('blue'),
-                opacityStart: 0,
-                opacityStartSpread: 0,
-                opacityMiddle: 0.5,
-                opacityMiddleSpread: 0,
-                opacityEnd: 1,
-                opacityEndSpread: 1,
-                
-                sizeStart: 0.01,
-                sizeEnd: 0.5,
-
-                particleCount: 5
-            });
-
-            particleGroup.addEmitter( emitter );
-            var clock = new THREE.Clock();
-            scene.add( particleGroup.mesh );
-            */
-
-            /* MOVED TO METHOD
-            // axes
-            axes = new THREE.AxisHelper(100);
-            scene.add(axes);
-
-            // add axes labels
-            this.makeSprite(scene, "webgl", {
-                x: 110,
-                y: 0,
-                z: 0,
-                text: "X",
-                color: "#ff0000"
-            });
-            this.makeSprite(scene, "webgl", {
-                x: 0,
-                y: 110,
-                z: 0,
-                text: "Y",
-                color: "#00ff00"
-            });
-            this.makeSprite(scene, "webgl", {
-                x: 0,
-                y: 0,
-                z: 110,
-                text: "Z",
-                color: "#0000ff"
-            });
-            */
-            //this.drawAxes();
 
             // Action!
             //controls.addEventListener( 'change', test );
@@ -2583,39 +2348,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             */
             console.log("this wantAnimate:", this);
             this.wantAnimate = true;
-            //this.camera = camera; 
-            //var that = this;
-            /*
-            function animate() {
-                TWEEN.update();
-                //setTimeout(slowDown, 100);
-                if (that.wantAnimate) requestAnimationFrame(animate); // And repeat...
-                controls.update();
-                // Use a fixed time-step here to avoid gaps
-                //render( clock.getDelta() );
-                //render();
-                renderer.render(scene, camera);
-            }
-            */
-            
-            //setTimeout(this.sleepAnimate, 5000);
-
-            /*
-            function render2(dt) {
-                //controls.update();
-                //particleGroup.tick( dt );
-                renderer.render(scene, camera);
-                //console.log(camera);
-                //TWEEN.update();
-                requestAnimationFrame(render); // And repeat...
-                //stats.update();
-            }
-            */
-            //render( clock.getDelta() );
-            //setTimeout(animate, 0);
-            //render();
-            //animate();
-            //this.animate();
             this.wakeAnimate();
 
             // Fix coordinates up if window is resized.
@@ -2684,9 +2416,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         setFrameRate: function(rate) {
+            this.fpsRate = rate;
             
-            localStorage.setItem ('fpsRate', rate);
-            console.log ("Set fpsRate in storage:  ", rate);
+            localStorage.setItem ('fpsRate', this.fpsRate);
+            console.log ("Set fpsRate in storage:  ", this.fpsRate);
             
             // see if disabled
             if (rate == 0) {
@@ -2718,6 +2451,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         //frameRateCtr: 0, // counts to skip animate
         
         // 200 = 5fps, 100 = 10fps, 70=15fps, 50=20fps, 40=25fps, 30=30fps
+        fpsRate: 30,
         frameRateDelayMs: 32, 
         animate: function() {
             
@@ -2815,6 +2549,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
          * Special handler:
          *   'default': Called if no other handler matches.
          */
+        
         GCodeParser: function (handlers) {
             this.handlers = handlers || {};
             
@@ -3003,6 +2738,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         colorG0: 0x00ff00,
         colorG1: 0x0000ff,
         colorG2: 0x999900,
+        lineWidth: 1,
         createObjectFromGCode: function (gcode, indxMax) {
             //debugger;
             // Credit goes to https://github.com/joewalnes/gcode-viewer
@@ -3116,7 +2852,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         material: new THREE.LineBasicMaterial({
                             opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
                             transparent: true,
-                            linewidth: 1,
+                            linewidth: this.lineWidth,
                             vertexColors: THREE.FaceColors
                         }),
                         geometry: new THREE.Geometry(),
@@ -3803,10 +3539,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     var type = layer.type[tid];
                     //console.log("Layer:", layer.layer, "type:", type, "segCnt:", type.segmentCount);
                     // normal geometry (not buffered)
-                    //object.add(new THREE.Line(type.geometry, type.material, THREE.LinePieces));
+                    //object.add(new THREE.LineSegments(type.geometry, type.material));
                     // using buffer geometry
                     var bufferGeo = this.convertLineGeometryToBufferGeometry( type.geometry, type.color );
-                    object.add(new THREE.Line(bufferGeo, type.material, THREE.LinePieces));
+                    object.add(new THREE.LineSegments(bufferGeo, type.material));
                 }
             }
             //XY PLANE
@@ -3916,232 +3652,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             return geometry;
         },
-        
-        /*
-        // marquee selection code
-        // Huge credit to Josh Staples for this code
-        // https://gist.github.com/cubicleDowns/7666452
-        marquee: {
-            
-            listeners: function() {
-                demo.jqContainer.mousedown(mouseDown);
-                demo.jqContainer.mouseup(mouseUp);
-                demo.jqContainer.mousemove(marqueeSelect);
-                $(document).mousemove(resetMarquee);
-            },
-        
-            resetMarquee: function() {
-                mouseup = true;
-                mousedown = false;
-                marquee.fadeOut();
-                marquee.css({width: 0, height: 0});
-                mousedowncoords = {};
-            },
-         
-            mouseDown: function (event) {
-    
-                event.preventDefault();
-                
-                var pos = {};
-                
-                mousedown = true;
-                mousedowncoords = {};
-                
-                mousedowncoords.x = event.clientX;
-                mousedowncoords.y = event.clientY;
-                
-                // adjust the mouse select
-                pos.x = ((event.clientX - offset.x) / demo.jqContainer.width()) * 2 -1;
-                pos.y = -((event.clientY - offset.y) / demo.jqContainer.height()) * 2 + 1;
-    
-                var vector = new THREE.Vector3(pos.x, pos.y, 1);
-                
-                demo.projector.unprojectVector(vector, demo.cameras.liveCam);
-    
-                // removing previous click marker.
-                $(".clickMarkers").remove();
-    
-                // appending a click marker.
-                demo.jqContainer.append('<div class="clickMarkers" style="pointer-events:none; position: absolute; z-index: 100; left: ' + event.offsetX + 'px; top: ' + event.offsetY +'px">D</div>' );
-    
-            },
 
-            mouseUp: function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                // reset the marquee selection
-                resetMarquee();
-    
-                // appending a click marker.
-                demo.jqContainer.append('<div class="clickMarkers" style="left: ' + event.offsetX + 'px; top: ' + event.offsetY +'px">U</div>' );
-            },
-
-            marqueeSelect: function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-    
-                // make sure we are in a select mode.
-                if(mousedown){
-        
-                    marquee.fadeIn();
-        
-                    var pos = {};
-                    pos.x = event.clientX - mousedowncoords.x;
-                    pos.y = event.clientY - mousedowncoords.y;
-                    
-                    // square variations
-                    // (0,0) origin is the TOP LEFT pixel of the canvas.
-                    //
-                    //  1 | 2
-                    // ---.---
-                    //  4 | 3
-                    // there are 4 ways a square can be gestured onto the screen.  the following detects these four variations
-                    // and creates/updates the CSS to draw the square on the screen
-                    if (pos.x < 0 && pos.y < 0) {
-                        marquee.css({left: event.clientX + 'px', width: -pos.x + 'px', top: event.clientY + 'px', height: -pos.y + 'px'});
-                    } else if ( pos.x >= 0 && pos.y <= 0) {
-                        marquee.css({left: mousedowncoords.x + 'px',width: pos.x + 'px', top: event.clientY, height: -pos.y + 'px'});
-                    } else if (pos.x >= 0 && pos.y >= 0) {
-                        marquee.css({left: mousedowncoords.x + 'px', width: pos.x + 'px', height: pos.y + 'px', top: mousedowncoords.y + 'px'});
-                    } else if (pos.x < 0 && pos.y >= 0) {
-                        marquee.css({left: event.clientX + 'px', width: -pos.x + 'px', height: pos.y + 'px', top: mousedowncoords.y + 'px'});
-                    }
-                    
-                    var selectedCubes = findCubesByVertices({x: event.clientX, y: event.clientY});
-                    
-                    demo.setup.highlight(selectedCubes);
-        
-                }
-            },
-
-            findCubesByVertices: function(location){
-                var currentMouse = {},
-                    mouseInitialDown = {},
-                    units,
-                    bounds,
-                    inside = false,
-                    selectedUnits = [],
-                    dupeCheck = {};
-                
-                currentMouse.x = location.x;
-                currentMouse.y = location.y;
-                
-                mouseInitialDown.x = (mousedowncoords.x - offset.x);
-                mouseInitialDown.y = (mousedowncoords.y - offset.y);
-                
-                units = getUnitVertCoordinates();
-                bounds = findBounds(currentMouse, mousedowncoords);
-                
-                for(var i = 0; i < units.length; i++) {
-                    inside = withinBounds(units[i].pos, bounds);
-                    if(inside && (dupeCheck[units[i].id] === undefined)){
-                        selectedUnits.push(units[i]);
-                        dupeCheck[units[i].name] = true;
-                    }
-                }
-                
-                return selectedUnits;
-            },
-
-            // takes the mouse up and mouse down positions and calculates an origin
-            // and delta for the square.
-            // this is compared to the unprojected XY centroids of the cubes.
-            findBounds: function(pos1, pos2) {
-                
-                // calculating the origin and vector.
-                var origin = {},
-                    delta = {};
-                
-                if (pos1.y < pos2.y) {
-                    origin.y = pos1.y;
-                    delta.y = pos2.y - pos1.y;
-                } else {
-                    origin.y = pos2.y;
-                    delta.y = pos1.y - pos2.y;
-                }
-                
-                if(pos1.x < pos2.x) {
-                    origin.x = pos1.x;
-                    delta.x = pos2.x - pos1.x;
-                } else {
-                    origin.x = pos2.x;
-                    delta.x = pos1.x - pos2.x;
-                }
-                return ({origin: origin, delta: delta});
-            },
-
-
-            // Takes a position and detect if it is within delta of the origin defined by findBounds ({origin, delta})
-            withinBounds: function(pos, bounds) {
-                
-                var ox = bounds.origin.x,
-                    dx = bounds.origin.x + bounds.delta.x,
-                    oy = bounds.origin.y,
-                    dy = bounds.origin.y + bounds.delta.y;
-                
-                if((pos.x >= ox) && (pos.x <= dx)) {
-                    if((pos.y >= oy) && (pos.y <= dy)) {
-                        return true;
-                    }
-                }
-                
-                return false;
-            },
-
-            getUnitVertCoordinates: function(threeJsContext) {
-                
-                var units = [],
-                    verts = [],
-                    child,
-                    prevChild,
-                    unit,
-                    vector,
-                    pos,
-                    temp,
-                    i, q;
-                
-                for(i = 0; i < demo.collisions.length; i++) {
-                    child = demo.collisions[i];
-                    child.updateMatrixWorld();
-                    
-                    verts = [
-                        child.geometry.vertices[0],
-                        child.geometry.vertices[1],
-                        child.geometry.vertices[2],
-                        child.geometry.vertices[3],
-                        child.geometry.vertices[4],
-                        child.geometry.vertices[5],
-                        child.geometry.vertices[6],
-                        child.geometry.vertices[7]
-                    ];
-                    
-                    for(q = 0; q < verts.length; q++) {
-                        vector = verts[q].clone();
-                        vector.applyMatrix4(child.matrixWorld);
-                        unit = {};
-                        unit.id = child.id;
-                        unit.mesh = child;
-                        unit.pos = toScreenXY(vector);;
-                        units.push(unit);
-                    }
-                }
-                return units;
-            },
-
-            toScreenXY: function(position) {
-                
-                var pos = position.clone();
-                var projScreenMat = new THREE.Matrix4();
-                projScreenMat.multiplyMatrices( demo.cameras.liveCam.projectionMatrix, demo.cameras.liveCam.matrixWorldInverse );
-                pos.applyProjection(projScreenMat);
-                
-                return { x: ( pos.x + 1 ) * demo.jqContainer.width() / 2 + demo.jqContainer.offset().left,
-                        y: ( - pos.y + 1) * demo.jqContainer.height() / 2 + demo.jqContainer.offset().top };
-            }
-        }
-        // end marquee object
-        */
     }
         
 });
