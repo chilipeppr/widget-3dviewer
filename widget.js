@@ -2,7 +2,6 @@
 // Defining the globals above helps Cloud9 not show warnings for those variables
 
 // ChiliPeppr Widget/Element Javascript
-
 requirejs.config({
     paths: {
         Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three',
@@ -26,12 +25,6 @@ requirejs.config({
             deps: ['Three'],
         },
     }
-});
-
-// Hax to bring us our global THREE object
-define('Three', ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.js'], function ( THREE ) {
-  window.THREE = THREE;
-  return THREE;
 });
 
 cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
@@ -75,7 +68,6 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
     function () {
         console.log("mycallback got called after loading flash msg module");
         cprequire(["inline:com-chilipeppr-elem-flashmsg"], function (fm) {
-            //console.log("inside require of " + fm.id);
             fm.init();
         });
     });
@@ -133,6 +125,12 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
     console.log("3d viewer initted");
 } /*end_test*/ );
 
+// Bring THREE in to global scope
+define('Three', ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.js'], function ( THREE ) {
+  window.THREE = THREE;
+  return THREE;
+});
+
 cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 'ThreeTrackballControls', 'ThreeTween', 'ThreeProjector'], function () {
 
     return {
@@ -170,46 +168,92 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         foreignPublish: {
         },
+        
+        // Variables and states
+        initOptions: {},
+        
+        onSignalSceneReloadedFailAttempts: 0, // track failed nulls
+        
         scene: null,
         object: null,
         camera: null,
         controls: null,
         toolhead: null,
+        decorate: null, // stores the decoration 3d objects
+        shadowplane: null, // where the toolhead shadow is rendered
+        grid: null, // stores grid
+        axes: null, // global property to store axes that we drew
+        
+        
+        element: null, // scene element
+        isUnitsMm: true, // true for mm, false for inches
+        
         tween: null,
         tweenHighlight: null,
         tweenIndex: null,
         tweenSpeed: 1,
         tweenPaused: false,
         tweenIsPlaying: false,
+        
         wantAnimate: true, // we automatically timeout rendering to save on cpu
-        initOptions: {},
+        
+        zheighttest: 0, // test toolhead going up in z
+        textFont: false, // three.js font object
+        
+        isInspectSelect: false,
+        inspectArrowGrp: null,
+        inspectCurPos: null,
+        inspectLastObj: {uuid:""},
+        inspectLastDecorateGroup: null,
+        inspectDlgEl: null,
+        
+        isJogBtnAttached: false, // is the jog btn setup?
+        isJogSelect: false, // indicates we're in 3d jog mode
+        arrowHelper: null,
+        jogPlane: null,
+        isJogRaycaster: false,
+        jogArrow: null,
+        jogArrowCyl: null,
+        jogArrowLine: null,
+        jogArrowShadow: null,
+        jogCurPos: null,
+        
+        // render state & fps tracking
+        mytimeout: null,
+        renderFrameCtr: 0, // keep track of fps
+        fpsRate: 30,
+        fpsCounterInterval: null,
+        fpsEl: null,
+        frameRateDelayMs: 32, 
+        isNoSleepMode: false,
+        
+        // basic properties
+        colorBackground: 0xeeeeee, // this is the background color of the 3d viewer
+        colorG0: 0x00ff00,
+        colorG1: 0x0000ff,
+        colorG2: 0x999900,
+        lineWidth: 1,
+        
+        // options
+        animEnable: true, // boolean tracking whether we allow animation
+        
+        disableAA: false,
+        showShadow: true,
+        
+        gridSize: 1, // global property for size of grid. default to 1 (shapeoko rough size)
+        isLookAtToolHeadMode: false,
+        
+        
         init: function (initOptions) {
             this.initOptions = initOptions;
+            
             var that = this;
-            /*
-            if (!Modernizr.webgl) {
-                alert('Sorry, you need a WebGL capable browser to use this.\n\nGet the latest Chrome or FireFox.');
-                return;
-            }
-
-            if (!Modernizr.localstorage) {
-                alert("Man, your browser is ancient. I can't work with this. Please upgrade.");
-                return;
-            }
-            */
-
-            // Show 'About' dialog for first time visits.
-            /*
-            if (!localStorage.getItem("not-first-visit")) {
-                localStorage.setItem("not-first-visit", true);
-                setTimeout(about, 500);
-            }
-            */
 
             // Drop files from desktop onto main page to import them.
             // We also can subscribe to the main chilipeppr drag/drop
             // pubsub to get drop events from a parent, rather than doing
             // this on our own
+            
             
             // subscribe to file load events
             chilipeppr.subscribe("/com-chilipeppr-elem-dragdrop/ondropped", this, this.onPubSubFileLoaded);
@@ -233,48 +277,54 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             that.openGCodeFromText(reader.result);
                         };
                         reader.readAsText(files[0]);
-                        // reader.readAsArrayBuffer(files[0]);
                     }
                 });
             }
             
             
-            // render options
+            // Load existing state/options from localStorage
             this.disableAA = (localStorage.getItem('disable-aa') == 'true') ? true : false;
             this.showShadow = (localStorage.getItem('toolhead-shadow') == 'true' ? true : false);
             
+            this.fpsRate = localStorage.getItem('fpsRate');
+            if (this.fpsRate) {
+                console.log("got prior FPS Rate, setting it now:  ", this.fpsRate, "//rk");
+                this.setFrameRate(parseInt(this.fpsRate));
+            }
+            
+            
+            // setup the scene and attempt to load the last object
             that.scene = that.createScene($('#com-chilipeppr-widget-3dviewer-renderArea'));
+            
+            // TODO: maybe we dont do this, instead have the gcode widget tell us what we should do, maybe we just show the chilipeppr logo regardless.
             var lastImported = localStorage.getItem('last-imported');
             var lastLoaded = localStorage.getItem('last-loaded');
             if (lastImported) {
                 that.openGCodeFromText(lastImported);
             } else {
-                //console.log("would have opened octocat");
-                //that.openGCodeFromPath(lastLoaded || 'examples/octocat.gcode');
-                console.log("loading chilipeppr logo");
                 that.openGCodeFromPath(lastLoaded || 'http://www.chilipeppr.com/3d/chilipepprlogo.nc');
             }
             
-            var lastFpsRate = localStorage.getItem ('fpsRate');
-            if (lastFpsRate) {
-                console.log("got prior FPS Rate, setting it now:  ", lastFpsRate, "//rk");
-                //this.setFrameRate(parseInt(lastFpsRate) );
-                var fr = parseInt(lastFpsRate);
-                this.setFrameRate(fr);
-                // set css to show selected
-            }
             
-            // download our font
+            
+            // download the font we'll use to render text
             this.downloadFont();
             
-            // setup toolbar buttons
+            
+            // setup toolbar buttons and menu state
             this.btnSetup();
-            
-            // set menu highlights
+            this.setupCogMenu();
+            this.setupFpsMenu();
             this.setCogMenuState();
+            this.setupGridSizeMenu();
             
+            this.initJog();
+            this.initInspect();
+            
+            
+            // Download and attach the Fork Widget elements in the dropdown
             this.forkSetup();
-            //this.setDetails("blah");
+                        
             
             // subscribe to gotoline signal so we can move toolhead to correct location
             // to sync with the gcode sender
@@ -293,12 +343,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // setup more pubsub to allow other widgets to inject objects to our scene
             this.setupScenePubSub();
             
-            this.setupGridSizeMenu();
-            
-            this.setupCogMenu();
-            this.setupFpsMenu();
-            this.initJog(); //this.setupJog();
-            this.initInspect();
+
             
             this.drawAxesToolAndExtents()
             
@@ -321,7 +366,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             chilipeppr.subscribe("/" + this.id + "/request3dObject", this, this.request3dObject);
         },
-        onSignalSceneReloadedFailAttempts: 0, // track failed nulls
+
         onSignalSceneReloaded: function () {
             // this can get called before there is userData, so check for that
             // and if so, wait to publish until there is
@@ -341,8 +386,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
             }
         },
-        // INSPECT CODE REGION
-        isInspectSelect: false,
+
         initInspect: function() {
             // attach click event
             console.log("doing one time run of initial inspect setup. this should not run more than once!!!");
@@ -371,8 +415,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
         },
         setupInspect: function(evt) {
-            
             console.log("setupInspect.");
+            
             if (this.isInspectSelect) {
                 console.log("we are already in inspect mode. being asked to setup, but returning cuz u can't setup more than once.");
                 return;
@@ -384,11 +428,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             el.click(this.inspectMouseClick.bind(this));
             $('.com-chilipeppr-widget-3d-menu-inspect').addClass("active");
             $('.com-chilipeppr-widget-3d-menu-inspect').addClass("btn-primary");
-            // make sure animation stays on
-            //this.gotoXyz({x:0,y:0,z:3});
+            
             if (this.inspectArrowGrp != null) {
                 this.sceneAdd(this.inspectArrowGrp);
-                //this.inspectArrowGrp.visible = true;
             }
             
             this.sceneAdd(this.inspectPreviewGroup);
@@ -397,6 +439,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         unsetupInspect: function() {
             console.log("unsetupInspect");
+            
             if (!this.isInspectSelect) {
                 console.log("we are being asked to unsetup inspect, but it is not running so why are we getting called?");
                 return;
@@ -454,9 +497,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 chilipeppr.publish("/com-chilipeppr-widget-gcode/jumpToLine", lineNum);
             }
         },
-        inspectArrowGrp: null,
         createInspectArrow: function() {
-            
             if (this.inspectArrowGrp != null) return;
             
             // build pointer line
@@ -475,13 +516,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             console.log("just added inspectArrowGrp:", this.inspectArrowGrp);
 
         },
-        inspectCurPos: null,
-        inspectLastObj: {uuid:""},
-        inspectLastDecorateGroup: null,
-        inspectDlgEl: null,
         inspectMouseMove: function(evt) {
-            
-            //event.preventDefault();
             if (!this.isInspectSelect) {
                 return;
             }
@@ -501,21 +536,14 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var origin = this.camera.position.clone();
             var dir = vector.sub( this.camera.position ).normalize();
             
-            // set where arrow is pointing
-            //this.inspectArrowGrp.position.set(origin.x, origin.y, 0);
-            
             var raycaster = new THREE.Raycaster( origin, dir );
             raycaster.linePrecision = 0.2;
-            //console.log("mouse:", mouse, "raycaster:", raycaster);
-            //console.log("inspecting object.children", this.object.children);
-            //var io = raycaster.intersectObjects(this.object.children, true);
+            
             var io = raycaster.intersectObjects(this.object.userData.threeObjs.children, true);
-            //console.log("io:", io);
             
             if (io.length > 0) {
                 // we hit some objects
                 var obj = io[0];
-                //console.log("obj:", obj);
                 
                 // see if this is a new object we haven't hit yet
                 if (this.inspectLastObj.uuid != obj.object.uuid) {
@@ -524,28 +552,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     var ud = o.userData;
                     
                     console.log("hit new object:", o);
-
-                    //this.inspectLastOpacity = o.material.opacity;
-                    
-                    // reset last object
-                    //console.log("testing for reset last object. this.inspectLastObj:", this.inspectLastObj);
                     
                     // remove all previous preview items
                     this.inspectPreviewGroup.children.forEach(function(threeObj) {
                         this.inspectPreviewGroup.remove(threeObj);
                     }, this);
                     
-                    if (this.inspectLastObj.uuid != "") {
-                        //this.inspectPreviewGroup(
-                        //this.sceneRemove(this.inspectLastObj);
-                        //this.inspectLastObj.material.opacity = this.inspectLastOpacity;
-                        //this.inspectLastObj.material.color = 0x0000ff;
-                    }
-                    
-                    // set the current object to new opacity
-                    //o.material.opacity = 1.0;
-                    //o.material.color = 0xff0000;
-                    //this.sceneAdd(o);
                     // create glow
                     var glow = this.createGlow(o);
                     this.inspectPreviewGroup.add(glow);
@@ -578,9 +590,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 
                 
             } else if (false) {
-                
-                // nothing was hit, reset last obj
-                // reset last object
                 console.log("nothing hit. resetting inspectLastObj:", this.inspectLastObj);
                 if (this.inspectLastObj.uuid != "") {
                     
@@ -597,11 +606,14 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
             }
         },
+        
         createGlow: function(threeObj) {
             console.log("createGlow. threeObj:", threeObj);
+            
             var obj = new THREE.Group();
             if (threeObj instanceof THREE.Line) {
                 console.log("threeObj is Line");
+                
                 // draw a cube at each end point
                 var v1 = threeObj.geometry.vertices[0];
                 var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
@@ -616,18 +628,16 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     transparent: true,
                     opacity: 0.1
                 } );
+                
                 var cylinder = new THREE.Mesh( geometry, material );
+                
                 // figure out rotation
                 var arrow = new THREE.ArrowHelper( dir, v1, length, 0xff0000 );
                 obj.add(arrow);
-                //uv2.sub(uv1);
-                /*uv1.normalize();
-                uv2.normalize();
-                var quaternion = new THREE.Quaternion().setFromUnitVectors( uv1, uv2 );
-                var matrix = new THREE.Matrix4().makeRotationFromQuaternion( quaternion );
-                cylinder.applyMatrix( matrix );*/
+                
                 var rot = arrow.rotation.clone()
                 cylinder.rotation.set(rot.x, rot.y, rot.z);
+                
                 var cpos = ray.at(length/2);
                 cylinder.position.set(cpos.x, cpos.y, cpos.z);
 
@@ -635,15 +645,17 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 obj.add(cylinder);
             } else {
                 console.log("threeObj not Line");
-                //return 
             }
+            
             return obj;
         },
         createGlowCubeCaps: function(threeObj) {
             console.log("createGlow. threeObj:", threeObj);
+            
             var obj = new THREE.Group();
             if (threeObj instanceof THREE.Line) {
                 console.log("threeObj is Line");
+                
                 // draw a cube at each end point
                 var v1 = threeObj.geometry.vertices[0];
                 var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
@@ -653,35 +665,33 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     transparent: true,
                     opacity: 0.1
                 } );
+                
                 var cube = new THREE.Mesh( geometry, material );
                 cube.position.set(v1.x, v1.y, v1.z);
+                
                 var cube2 = cube.clone();
                 cube2.position.set(v2.x, v2.y, v2.z);
-                //this.sceneAdd( cube );
+                
                 console.log("adding cube:", cube, "cube2:", cube2);
+                
                 obj.add(cube);
                 obj.add(cube2);
-                //return cube;
             } else {
                 console.log("threeObj not Line");
-                //return 
             }
+            
             return obj;
         },
         
 
         // JOG CODE REGION
-        isJogBtnAttached: false, // is the jog btn setup?
-        isJogSelect: false, // indicates we're in 3d jog mode
         initJog: function() {
             if (!this.isJogBtnAttached) {
                 // attach click event
                 console.log("doing one time run of initial jog setup. this should not run more than once!!!");
+                
                 $('.com-chilipeppr-widget-3d-menu-jog').click(this.toggleJog.bind(this));
                 
-                // attach shortcut key
-                //$(document).keydown(this.jogKeyDown.bind(this));
-                //$(document).keydown(this.jogKeyUp.bind(this));
                 var el = $('#com-chilipeppr-widget-3dviewer-renderArea');
                 el.focus();
                 $(document).keydown(this.jogKeyDown.bind(this));
@@ -690,19 +700,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         setupJog: function(evt) {
-            
             console.log("setupJog.");
+            
             if (this.isJogSelect) {
                 console.log("we are already in jogging mode. being asked to setup, but returning cuz u can't setup more than once.");
                 return;
             }
-            //  var el = $(this.renderer.domElement);
-            //var el = $('#com-chilipeppr-widget-3dviewer-renderArea');
-            //el.focus();
-            //console.log("setupJog. el:", el);
-            //el.keydown(this.jogKeyDown.bind(this));
-            //el.keyup(this.jogKeyUp.bind(this));
-            //this.renderer.domElement.addEventListener( 'keydown', this.jogKeyDown.bind(this), false );
             
             // start watching mouse
             var el = $(this.renderer.domElement);
@@ -715,7 +718,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.isJogSelect = true;
         },
         unsetupJog: function() {
-            
             if (!this.isJogSelect) {
                 console.log("we are being asked to unsetup jog, but it is not running so why are we getting called?");
                 return;
@@ -738,12 +740,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         jogKeyDown: function(evt) {
-            //console.log("jogKeyDown. evt:", evt);
-            //if ((evt.cltrKey || evt.altKey) && !this.isJogSelect) {
-            //if ((evt.ctrlKey || evt.altKey)  && !this.isJogSelect) {
             if ((evt.ctrlKey)  && !this.isJogSelect) {
-                //evt.preventDefault();
-                //this.isJogSelect = true;
                 this.wakeAnimate();
                 this.setupJog(evt);
             } else {
@@ -751,27 +748,16 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         jogKeyUp: function(evt) {
-            //console.log("jogKeyUp. evt:", evt);
-            //if ((evt.keyCode == 17 || evt.keyCode == 18) && this.isJogSelect) {
             if ((evt.keyCode == 17) && this.isJogSelect) {
-                //this.isJogSelect = false;
                 this.unsetupJog(evt);
             }
         },
-        arrowHelper: null,
-        jogPlane: null,
-        isJogRaycaster: false,
-        jogArrow: null,
-        jogArrowCyl: null,
-        jogArrowLine: null,
-        jogArrowShadow: null,
         unsetupJogRaycaster: function() {
             this.sceneRemove(this.jogPlane);
             this.sceneRemove(this.jogArrow);
             this.isJogRaycaster = false;
         },
         setupJogRaycaster: function() {
-            
             console.log("doing setupJogRaycaster"); 
             console.log("mimic grid size:", this.grid);
             
@@ -779,14 +765,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             var box = new THREE.Box3();
             box.setFromObject(helper);
-            
-            //helper.update();
-            
-            // If you want a visible bounding box
-            //scene.add(helper);
-            // If you just want the numbers
-            console.log(box.min);
-            console.log(box.max);
             
             console.log("boundingbox:", box);
             var w = box.max.x - box.min.x;
@@ -796,20 +774,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var geometry = new THREE.PlaneBufferGeometry( w, h );
             var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
             this.jogPlane = new THREE.Mesh( geometry, material );
-            //this.scene.add( this.jogPlane );
-            
-            // setup arrow helper
-            /*
-            var length = 50;
-            var hex = 0xffff00;
-            
-            var origin = new THREE.Vector3(0,0,50);
-            var dir = new THREE.Vector3(0,0,-1);
-            //if (this.arrowHelper != null) this.scene.remove(this.arrowHelper);
-            this.arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
-            //this.arrowHelper.material.visibility = false;
-            this.scene.add( this.arrowHelper );
-            */
             
             console.group("draw jogArrow");
             
@@ -861,11 +825,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             triangleShape.lineTo(  0, 0 ); // close path
             var geometry = new THREE.ShapeGeometry( triangleShape );
             
-            //var mesh = THREE.SceneUtils.createMultiMaterialObject( geometry, [ new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity:0.05 } ), new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, transparent: true } ) ] );
             var mesh = THREE.SceneUtils.createMultiMaterialObject( geometry, [ new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity:0.05 } ) ] );
-            //mesh.position.set( x, y, z - 125 );
-            //mesh.rotation.set( rx, ry, rz );
-            //mesh.scale.set( s, s, s );
             
             // figure out z position
             //mesh.position.setZ(this.toolhead.position.z);
@@ -894,10 +854,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 opacity: 0.2,
                 size: 7 //this.getUnitVal(7)
             });
+            
             jogArrowGrp.add( txtObj );
             
             this.jogArrow = jogArrowGrp;
-            
             this.sceneAdd(this.jogArrow);
             
             console.groupEnd();
@@ -917,18 +877,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
             }
         },
-        jogCurPos: null,
         jogMouseMove: function(evt) {
-            
-            //event.preventDefault();
             if (!this.isJogSelect) {
                 return;
             }
             
             this.wakeAnimate();
             
-            //console.log("jogMouseMove. evt:", evt);
-
             var mouse = {};
             mouse.x = ( evt.clientX / window.innerWidth ) * 2 - 1;
             mouse.y = - ( evt.clientY / window.innerHeight ) * 2 + 1;
@@ -943,7 +898,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
             
             var raycaster = new THREE.Raycaster( origin, dir );
-            //console.log("mouse:", mouse, "raycaster:", raycaster);
+
             var io = raycaster.intersectObject(this.jogPlane, false);
             console.log("io:", io);
             
@@ -955,15 +910,14 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 this.jogCurPos = pt.clone();
             }
         },
-        showShadow: true,
-        
+
         setupCogMenu: function() {
             $('.com-chilipeppr-widget-3dviewer-settings-aa').click( this.onToggleAAClick.bind(this));
             $('.com-chilipeppr-widget-3dviewer-settings-shadows').click( this.onToggleShadowClick.bind(this));
             
         },
+        
         setCogMenuState: function() {
-           
             var toggleShadowItem = $('.com-chilipeppr-widget-3dviewer-settings-shadows');
             if (this.showShadow && !toggleShadowItem.hasClass('alert-info')) {
                 toggleShadowItem.addClass('alert-info');
@@ -983,6 +937,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             $('.com-chilipeppr-widget-3dviewer-settings-fr-' + this.fpsRate).addClass('alert-info');
             
         },
+        
         onToggleAAClick: function(evt, param) {
             console.log("got onToggleAAClick. evt:", evt, "param:", param);
             this.disableAA = !this.disableAA; // toggle
@@ -997,6 +952,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             $('#com-chilipeppr-widget-3dviewer-aa-notice').modal();
         },
+        
         onToggleShadowClick: function(evt, param) {
             console.log("got onToggleShadowClick. evt:", evt, "param:", param);
             this.showShadow = !this.showShadow; // toggle
@@ -1009,6 +965,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.setCogMenuState();
             this.drawToolhead();
         },
+        
         setupFpsMenu: function() {
             $('.com-chilipeppr-widget-3dviewer-settings-fr-5').click(5, this.onFpsClick.bind(this));
             $('.com-chilipeppr-widget-3dviewer-settings-fr-10').click(10, this.onFpsClick.bind(this));
@@ -1028,7 +985,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         
         
-        gridSize: 1, // global property for size of grid. default to 1 (shapeoko rough size)
+
         setupGridSizeMenu: function() {
             $('.com-chilipeppr-widget-3dviewer-gridsizing-1x').click(1, this.onGridSizeClick.bind(this));
             $('.com-chilipeppr-widget-3dviewer-gridsizing-2x').click(2, this.onGridSizeClick.bind(this));
@@ -1049,6 +1006,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             $('.com-chilipeppr-widget-3dviewer-gridsizing-' + this.gridSize + 'x').addClass("alert-info");
             
         },
+        
+        
         setUnits: function(units) {
             if (units == "mm")
                 this.isUnitsMm = true;
@@ -1064,18 +1023,19 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             chilipeppr.publish("/" + this.id + "/recvUnits", units);
         },
         onUnitsChanged: function() {
-            //console.log("onUnitsChanged");
             // we need to publish back the units
             var units = "mm";
             if (!this.isUnitsMm) units = "inch";
             chilipeppr.publish("/" + this.id + "/unitsChanged", units);
             $('.com-chilipeppr-widget-3dviewer-units-indicator').text(units);
         },
+        
         request3dObject: function() {
             console.log("request3dObject");
             // we need to publish back the object
             chilipeppr.publish("/" + this.id + "/recv3dObject", this.object, {'scene': this.scene, 'camera': this.camera, 'toolhead': this.toolhead, 'widget': this });
         },
+        
         sceneAdd: function(obj) {
             console.log("sceneAdd. obj:", obj);
             this.wakeAnimate();
@@ -1097,12 +1057,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         sceneClear: function() {
             this.stopSampleRun();
             this.wakeAnimate();
-            //this.scene.remove(this.object);
             this.object.children = [];
             this.sceneRemove(this.decorate);
         },
+        
+        
         btnSetup: function() {
-            
             // attach button bar features
             var that = this;
             this.isLookAtToolHeadMode = true;
@@ -1141,10 +1101,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             });
         },
         forkSetup: function () {
-            //$('#com-chilipeppr-widget-3dviewer .fork').prop('href', this.fiddleurl);
-            //$('#com-chilipeppr-widget-3dviewer .standalone').prop('href', this.url);
-            //var t = $('#com-chilipeppr-widget-3dviewer .fork-name');
-            //t.html(this.id);
             $('#com-chilipeppr-widget-3dviewer .panel-title').popover({
                 title: this.name,
                 content: this.desc,
@@ -1161,8 +1117,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     pubsubviewer.attachTo($('#com-chilipeppr-widget-3dviewer-dropdown'), that);
                 });
             });
-
-            //console.log("title in menu", t);
         },
         onPubSubFileLoaded: function(txt) {
             this.openGCodeFromText(txt);
@@ -1172,12 +1126,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         loadFile: function (path, callback /* function(contents) */ ) {
             var that = this;
-            
-          // rewrite www.chilipeppr.com url's to i2dcui.appspot.com so we support SSL
-          path = path.replace(/http\:\/\/www.chilipeppr.com/i, "//i2dcui.appspot.com");
-          path = path.replace(/http\:\/\/chilipeppr.com/i, "//i2dcui.appspot.com");
-          path = path.replace(/\/\/www.chilipeppr.com/i, "//i2dcui.appspot.com");
-          path = path.replace(/\/\/chilipeppr.com/i, "//i2dcui.appspot.com");
+
+            // rewrite www.chilipeppr.com url's to i2dcui.appspot.com so we support SSL
+            path = path.replace(/http\:\/\/www.chilipeppr.com/i, "//i2dcui.appspot.com");
+            path = path.replace(/http\:\/\/chilipeppr.com/i, "//i2dcui.appspot.com");
+            path = path.replace(/\/\/www.chilipeppr.com/i, "//i2dcui.appspot.com");
+            path = path.replace(/\/\/chilipeppr.com/i, "//i2dcui.appspot.com");
 
             $.get(path, null, callback, 'text')
                 .error(function () {
@@ -1198,47 +1152,44 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         openGCodeFromPath: function (path) {
             var that = this;
-            //$('#openModal').modal('hide');
+            
             if (that.object) {
-                //TWEEN.removeAll();
                 this.stopSampleRun();
                 that.scene.remove(that.object);
-                //that.scene.remove(that.decorate);
             }
             that.loadFile(path, function (gcode) {
                 that.object = that.createObjectFromGCode(gcode);
                 that.scene.add(that.object);
                 that.viewExtents();
-                //that.decorateExtents();
                 that.drawAxesToolAndExtents();
                 that.onUnitsChanged();
                 localStorage.setItem('last-loaded', path);
                 localStorage.removeItem('last-imported');
             });
+            
             // fire off Dat Chu's scene reload signal
             that.onSignalSceneReloaded();
         },
         openGCodeFromText: function (gcode) {
             console.log("openGcodeFromText");
             this.wakeAnimate();
-            //$('#openModal').modal('hide');
+
             if (this.object) {
-                //TWEEN.removeAll();
                 this.stopSampleRun();
                 this.scene.remove(this.object);
-                //this.scene.remove(this.decorate);
             }
+            
             this.object = this.createObjectFromGCode(gcode);
             console.log("done creating object:", this.object);
             this.scene.add(this.object);
-            //this.lookAtCenter();
+            
             this.viewExtents();
-            //this.decorateExtents();
             this.drawAxesToolAndExtents();
             this.onUnitsChanged();
             this.setDetails(this.object.userData.lines.length + " GCode Lines");
             this.wakeAnimate();
             
+            // TODO: maybe we remove this logic all-together
             // we can get a QuotaExceededError here, so catch it
             try {
                 // remove old 1st to perhaps make more room for quota check
@@ -1247,8 +1198,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 localStorage.setItem('last-imported', gcode);
             } catch(e) {
                 if (e.name === 'QUOTA_EXCEEDED_ERR' || e.name == "QuotaExceededError" || e.code == 22 || e.name == "NS_ERROR_DOM_QUOTA_REACHED" || e.code == 1014) {
-                    //this.sceneRemove(this.object);
-                    // show err dialog
                     console.error("3D Viewer Widget. out of local storage space, but letting user proceed. err:", e);
                     $('#com-chilipeppr-widget-3dviewer-outofspace').modal();
                 } else {
@@ -1259,7 +1208,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             // fire off Dat Chu's scene reload signal
             this.onSignalSceneReloaded();
-
         },
         lookAtCenter: function () {
             // this method makes the trackball controls look at center of gcode object
@@ -1267,14 +1215,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.controls.target.y = this.object.userData.center2.y;
             this.controls.target.z = this.object.userData.center2.z;
         },
-        isLookAtToolHeadMode: false,
+
         lookAtToolHead: function () {
             // this method makes the trackball controls look at the tool head
-            //console.log("lookAtToolHead. controls:", this.controls, "toolhead:", this.toolhead);
             if (this.isLookAtToolHeadMode) {
                 this.controls.target.x = this.toolhead.position.x;
                 this.controls.target.y = this.toolhead.position.y;
-                //this.controls.target.z = this.toolhead.position.z - 20;
                 this.controls.target.z = this.toolhead.position.z;
             }
         },
@@ -1310,13 +1256,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var box = new THREE.Box3();
             box.setFromObject(helper);
             
-            //helper.update();
-            
-            //if (this.bboxHelper)
-            //    this.scene.remove(this.bboxHelper);
             this.bboxHelper = helper;
+            
             // If you want a visible bounding box
-            //this.scene.add(this.bboxHelper);
             console.log("helper bbox:", box);
             
             var minx = box.min.x;
@@ -1334,16 +1276,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             //this.controls.enabled = false;
             this.controls.reset();
-            //this.controls.object.rotation._x = 0.5;
-            //this.controls.object.rotation._y = 0.5;
-            //this.controls.object.rotation._z = 0.5;
-            //this.controls.object.rotation = THREE.Euler(0.5, 0.5, 0.5);
-            //this.controls.object.setRotationFromEuler(THREE.Euler(0.5,0.5,0.5));
-
-            // get max of any of the 3 axes to use as max extent
-            //var lenx = Math.abs(ud.bbbox2.min.x) + ud.bbbox2.max.x;
-            //var leny = Math.abs(ud.bbbox2.min.y) + ud.bbbox2.max.y;
-            //var lenz = Math.abs(ud.bbbox2.min.z) + ud.bbbox2.max.z;
+            
             var lenx = maxx - minx;
             var leny = maxy - miny;
             var lenz = maxz - minz;
@@ -1376,10 +1309,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 return;
             }
             this.controls.object.fov = fov;
-            //this.controls.object.setRotationFromEuler(THREE.Euler(0.5,0.5,0.5));
-            //this.controls.object.rotation.set(0.5,0.5,0.5,"XYZ");
-            //this.controls.object.rotateX(2);
-            //this.controls.object.rotateY(0.5);
             
             var L = dist;
             var camera = this.controls.object;
@@ -1389,49 +1318,39 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var quaternion = new THREE.Quaternion();
             
             // Zoom correction
+            // TODO: explore why this is setting setFromAxisAngle 3 times
             camera.translateZ(L - l);
             console.log("up:", up);
             up.y = 1; up.x = 0; up.z = 0;
             quaternion.setFromAxisAngle(up, 0.5);
-            //camera.position.applyQuaternion(quaternion);
+
             up.y = 0; up.x = 1; up.z = 0;
             quaternion.setFromAxisAngle(up, 0.5);
             camera.position.applyQuaternion(quaternion);
+            
             up.y = 0; up.x = 0; up.z = 1;
             quaternion.setFromAxisAngle(up, 0.5);
-            //camera.position.applyQuaternion(quaternion);
-            
+                
             camera.lookAt(vector);
                         
-            //this.camera.rotateX(90);
-            
             this.controls.object.updateProjectionMatrix();
-            //this.controls.enabled = true;
-            //this.scaleInView();
-            //this.controls.rotateCamera(0.5);
-            //this.controls.noRoll = true;
-            //this.controls.noRotate = true;
         },
         stopSampleRun: function (evt) {
             console.log("stopSampleRun. tween:", this.tween);
             this.tweenIsPlaying = false;
-            //this.tween.stopChainedTweens();
-            //console.log("_onCompleteCallback:", this.tween._onCompleteCallback);
-            //this.tween._onCompleteCallback.apply(this.tween, null);
+
             if (this.tweenHighlight) this.scene.remove(this.tweenHighlight);
             if (this.tween) this.tween.stop();
-            //TWEEN.stopChainedTweens();
-            //TWEEN.removeAll();
-            //TWEEN.stop();
+
             $('.com-chilipeppr-widget-3d-menu-samplerun').prop('disabled', false);
             $('.com-chilipeppr-widget-3d-menu-samplerunstop').prop('disabled', true);
             $('.com-chilipeppr-widget-3d-menu-samplerunstop').popover('hide');
+            
             this.animAllowSleep();
         },
         pauseSampleRun: function () {
             console.log("pauseSampleRun");
             if (this.tweenPaused) {
-                // the tween was paused, it's being non-paused
                 console.log("unpausing tween");
                 this.animNoSleep();
                 this.tweenIsPlaying = true;
@@ -1447,18 +1366,20 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         gotoXyz: function(data) {
             // we are sent this command by the CNC controller generic interface
             console.log("gotoXyz. data:", data);
+            
             this.animNoSleep();
             this.tweenIsPlaying = false;
             this.tweenPaused = true;
             
             if ('x' in data && data.x != null) this.toolhead.position.x = data.x;
             if ('y' in data && data.y != null) this.toolhead.position.y = data.y;
-            //if ('z' in data && data.z != null) this.toolhead.position.z = data.z + 20;
             if ('z' in data && data.z != null) this.toolhead.position.z = data.z;
+            
             if (this.showShadow) {
                 this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
                 this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
             }
+            
             this.lookAtToolHead();
             
             // see if jogging, if so rework the jog tool
@@ -1468,11 +1389,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             if (this.isJogSelect && this.jogArrowCyl) {
                 if ('z' in data && data.z != null) {
                     console.log("adjusting jog tool:", this.jogArrow);
+                    
                     var cyl = this.jogArrowCyl; //.children[0];
                     var line = this.jogArrowLine; //.children[2];
                     var shadow = this.jogArrowShadow; //.children[3];
                     var posZ = data.z * 3; // acct for scale
                     cyl.position.setZ(posZ + 20);
+                    
                     console.log("line:", line.geometry.vertices);
                     line.geometry.vertices[1].z = posZ; // 2nd top vertex
                     line.geometry.verticesNeedUpdate = true;
@@ -1486,9 +1409,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // this method is sort of like playNextTween, but we are jumping to a specific
             // line based on the gcode sender
             console.log("got gotoLine. data:", data);
-            //this.stopSampleRun();
-            //this.tweenPaused = false;
-            //this.pauseSampleRun();
+            
             this.animNoSleep();
             this.tweenIsPlaying = false;
             this.tweenPaused = true;
@@ -1497,23 +1418,24 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             console.log("userData.lines:", lines[data.line]);
             var curLine = lines[data.line];
             var curPt = curLine.p2;
-            //if (false && lines[data.line].p2) curPt = lines[data.line].p2;
-            //else curPt = {x:0,y:0,z:0};
+            
             console.log("p2 for toolhead move. curPt:", curPt);
             this.toolhead.position.x = curPt.x;
             this.toolhead.position.y = curPt.y;
-            //this.toolhead.position.z = curPt.z + 20;
             this.toolhead.position.z = curPt.z;
+            
             if (this.showShadow) {
                 this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
                 this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
             }
+            
             this.lookAtToolHead();
             this.animAllowSleep();
             
             /* GOOD STUFF BUT IF DON'T WANT ANIM*/
             if (this.tweenHighlight) this.scene.remove(this.tweenHighlight);
             if (this.tween) this.tween.stop();
+            
             if (data.anim && data.anim == "anim") {
                 console.log("being asking to animate gotoline");
                 this.animNoSleep();
@@ -1527,10 +1449,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             if (this.tweenPaused) return;
             
-            //this.wakeAnimate();
-
             var that = this;
             var lines = this.object.userData.lines;
+            
             if (this.tweenIndex + 1 > lines.length - 1) {
                 // done tweening
                 console.log("Done with tween");
@@ -1547,7 +1468,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // find next correct tween, i.e. ignore fake commands
             var isLooking = true;
             var indxStart = this.tweenIndex + 1;
-            //console.log("starting while loop");
+            
             while(isLooking) {
                 if (indxStart > lines.length - 1) {
                     console.log("we are out of lines to look at");
@@ -1565,9 +1486,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
                 indxStart++;
             }
+            
             var ll;
             if (lines[this.tweenIndex].p2) ll = lines[this.tweenIndex].p2;
             else ll = {x:0,y:0,z:0};
+            
             console.log("start line:", lines[this.tweenIndex], "ll:", ll);
             
             this.tweenIndex = indxStart;
@@ -1611,28 +1534,22 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 that.toolhead.position.x = this.x;
                 that.toolhead.position.y = this.y;
                 that.toolhead.position.z = this.z;
-                //that.zheighttest -= 0.1;
-                //that.toolhead.position.z = this.z + that.zheighttest;
-                //that.toolhead.position.z = this.z + 20;
-                // update where shadow casting light is looking
+
                 if (this.showShadow) {
                     that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
                     that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
                 }
-                //that.toolhead.children[0].target.matrixWorldNeedsUpdate = true;
-                //console.log("onUpdate2. toolhead:", that.toolhead);
+                
                 that.lookAtToolHead();
             });
-            //lastTween.chain(curTween);
-            //lastTween = curTween;
+
             this.tween = curTween;
-            //this.tweenIndex++;
             this.tween.start();
         },
-        zheighttest: 0, // test toolhead going up in z
+
         playSampleRun: function (evt) {
             console.log("controls:", this.controls);
-            //this.wakeAnimate();
+
             this.animNoSleep();
             $('.com-chilipeppr-widget-3d-menu-samplerun').prop('disabled', true);
             $('.com-chilipeppr-widget-3d-menu-samplerun').popover('hide');
@@ -1645,7 +1562,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             var that = this;
             console.log("playSampleRun");
-            //console.log("playSampleRun click:", evt, that);
 
             // cleanup previous run
             TWEEN.removeAll();
@@ -1665,23 +1581,19 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }, 20)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onComplete(function () {
-                //console.log("onComplete");
                 that.playNextTween();
             })
             .onUpdate(function () {
                 that.toolhead.position.x = this.x;
                 that.toolhead.position.y = this.y;
-                //that.toolhead.position.z = this.z + 20;
                 that.toolhead.position.z = this.z;
+                
                 // update where shadow casting light is looking
                 if (this.showShadow) {
                     that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
                     that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
                 }
                 
-                //that.toolhead.children[0].target.position.set(this.x, this.y, this.z);
-                //that.toolhead.children[0].target.matrixWorldNeedsUpdate = true;
-                //console.log("onUpdate. toolhead:", that.toolhead);
             });
 
             this.tween = tween;
@@ -1689,7 +1601,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.tween.start();
         },
         
-        textFont: false,
+
         downloadFont: function() {
             console.log('downloading font');
             
@@ -1738,9 +1650,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             return mesh;
         },
-        decorate: null, // stores the decoration 3d objects
+
         decorateExtents: function() {
-            
             // remove grid if drawn previously
             if (this.decorate != null) {
                 console.log("there was a previous extent decoration. remove it. grid:", this.decorate);
@@ -1762,13 +1673,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             //helper.update();
             this.bboxHelper = helper;
-            // If you want a visible bounding box
-            //this.scene.add(helper);
+            
             console.log("helper bbox:", box);
             
-            var color = '#0d0d0d';
-            //var color = '#ff0000';
-            
+            var color = '#0d0d0d';            
             var material = new THREE.LineDashedMaterial({ 
                 vertexColors: false, color: color,
                 dashSize: this.getUnitVal(1), gapSize: this.getUnitVal(1), linewidth: this.lineWidth,
@@ -1780,6 +1688,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var z = 0;
             var offsetFromY = this.getUnitVal(-4); // this means we'll be below the object by this padding
             var lenOfLine = this.getUnitVal(5);
+            
             var minx = box.min.x;
             var miny = box.min.y;
             var maxx = box.max.x;
@@ -1797,6 +1706,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 new THREE.Vector3(maxx, miny+offsetFromY, z)
                 
             );
+            
             lineGeo.computeLineDistances();
             var line = new THREE.LineSegments(lineGeo, material);
             line.type = THREE.Lines;
@@ -1826,6 +1736,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 new THREE.Vector3(minx + offsetFromX - lenOfLine, maxy, z),
                 new THREE.Vector3(minx + offsetFromX, maxy, z)
             );
+            
             lineGeo2.computeLineDistances();
             var line2 = new THREE.LineSegments(lineGeo2, material);
             line2.type = THREE.Lines;
@@ -1852,16 +1763,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 new THREE.Vector3(maxx + lenOfLine, miny, maxz),
                 new THREE.Vector3(maxx + lenOfLine, miny, maxz),
                 new THREE.Vector3(maxx, miny, maxz) 
-
-                /*
-                new THREE.Vector3(maxx + offsetFromX, miny+offsetFromY-lenOfLine, z),
-                new THREE.Vector3(minx, miny+offsetFromY-lenOfLine, z),
-                new THREE.Vector3(maxx, miny+offsetFromY-lenOfLine, z),
-                new THREE.Vector3(maxx, miny+offsetFromY-lenOfLine, z),
-                new THREE.Vector3(maxx, miny+offsetFromY, z)
-                */
-                
             );
+            
             zlineGeo.computeLineDistances();
             var zline = new THREE.LineSegments(zlineGeo, material);
             zline.type = THREE.Lines;
@@ -1895,9 +1798,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // Add estimated time and distance
             var ud = this.object.userData.lines;
             var udLastLine = ud[ud.length-1].p2;
-            //console.log("lastLine:", udLastLine, "userData:", ud, "this.object:", this.object);
-            // use last array value of userData cuz it keeps a running total of time
-            // and distance
             
             // get pretty print of time
             var ret = this.convertMinsToPrettyDuration(udLastLine.timeMinsSum);
@@ -1906,8 +1806,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var txt = "Estimated Time: " + ret + ","
             + " Total Distance: " + (udLastLine.distSum).toFixed(2);
             txt = (this.isUnitsMm) ? txt + " mm" : txt + " in";
-            //console.log("txt:", txt);
-            //console.log("blah", blah);
+            
             var txtTimeDist = this.makeText({
                 x: minx + this.getUnitVal(1),
                 y: miny + offsetFromY - lenOfLine - this.getUnitVal(6),
@@ -1917,12 +1816,14 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 opacity: 0.3,
                 size: this.getUnitVal(2)
             });
+            
             this.decorate.add(txtTimeDist);
             
             this.sceneAdd(this.decorate);
             console.log("just added decoration:", this.decorate);
 
         },
+        
         convertMinsToPrettyDuration: function(mins) {
             // Minutes and seconds
             var time = mins * 60;
@@ -1944,6 +1845,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             ret += "" + secs.toFixed(0) + "s";
             return ret;
         },
+        
+        // TODO: review makeSprite code
         makeSprite: function (scene, rendererType, vals) {
             var canvas = document.createElement('canvas'),
                 context = canvas.getContext('2d'),
@@ -1951,6 +1854,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 textHeight = 100,
                 textWidth = 0,
                 actualFontSize = this.getUnitVal(10);
+                
             var txt = vals.text;
             if (vals.size) actualFontSize = vals.size;
 
@@ -1963,7 +1867,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             context.font = "normal " + textHeight + "px Arial";
             context.textAlign = "center";
             context.textBaseline = "middle";
-            //context.fillStyle = "#ff0000";
             context.fillStyle = vals.color;
 
             context.fillText(txt, textWidth / 2, textHeight / 2);
@@ -1977,7 +1880,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 transparent: true,
                 opacity: 0.6
             });
+            
             material.transparent = true;
+            
+            
             //var textObject = new THREE.Sprite(material);
             var textObject = new THREE.Object3D();
             textObject.position.x = vals.x;
@@ -1994,11 +1900,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             textObject.add(sprite);
 
-            //scene.add(textObject);
             return textObject;
         },
-        element: null,
-        isUnitsMm: true, // true for mm, false for inches
+
         getInchesFromMm: function(mm) {
             return mm * 0.0393701;
         },
@@ -2008,9 +1912,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // if drawing is in inches convert
             return this.getInchesFromMm(val);
         },
+        
         drawAxesToolAndExtents: function() {
-            
-            //return;
             // these are drawn after the gcode is rendered now
             // so we can see if in inch or mm mode
             // these items scale based on that mode
@@ -2019,9 +1922,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.drawExtentsLabels();
             this.drawAxes();
         },
-        shadowplane: null,
+
         drawToolhead: function() {
-            
             console.group("drawToolhead");
             
             // remove grid if drawn previously
@@ -2037,8 +1939,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 console.log("no previous toolhead or shadowplane.");
             }
             
+            var scale = this.getUnitVal(1);
+            
             // TOOLHEAD WITH SHADOW
             var toolheadgrp = new THREE.Object3D();
+            toolheadgrp.scale.set(scale, scale, scale);
 
             // ToolHead Cylinder
             // API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
@@ -2046,15 +1951,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             cylinder.overdraw = true;
             cylinder.rotation.x = -90 * Math.PI / 180;
             cylinder.position.z = 20;
-            //cylinder.position.z = 40;
             cylinder.material.opacity = 0.3;
             cylinder.material.transparent = true;
             cylinder.castShadow = true;
-            //cylinder.receiveShadow = true;
-            console.log("toolhead cone:", cylinder);
-            //scene.add(cylinder);
             
-            //light.shadowCamera.lookAt(cylinder);
+            console.log("toolhead cone:", cylinder);
             toolheadgrp.add(cylinder);
             
             if (this.showShadow) {
@@ -2073,7 +1974,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 light.shadow.mapSize.width = 2048;
                 light.shadow.mapSize.height = 2048;
                 
-                
                 toolheadgrp.add(light);
                 
                 
@@ -2086,31 +1986,26 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 planeMaterial.depthWrite = false;
                 planeMaterial.depthTest = false;
                 
-                //var plane = new THREE.Mesh( new THREE.PlaneGeometry( planeW*50, planeH*50, planeW, planeH ), new   THREE.MeshLambertMaterial( { color: 0xffffff, wireframe: false, transparent: true, opacity: 0.5 } ) );
                 var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+                plane.scale.set(scale, scale, scale);
                 
                 plane.position.z = 0;
                 
                 plane.castShadow = false;
                 plane.receiveShadow = true;
-            }
-            
-            // scale the whole thing to correctly match mm vs inches
-            var scale = this.getUnitVal(1);
-            if (this.showShadow) plane.scale.set(scale, scale, scale);
-            toolheadgrp.scale.set(scale, scale, scale);
-            
-            this.toolhead = toolheadgrp;
-            if (this.showShadow) {
+                
                 this.shadowplane = plane;
                 this.sceneAdd(this.shadowplane);
             }
+            
+            
+            this.toolhead = toolheadgrp;
             this.sceneAdd(this.toolhead);
             
             console.groupEnd();
             
         },
-        grid: null, // stores grid
+
         gridTurnOff: function() {
             if (this.grid != null) {
                 console.log("there was a previous grid. remove it. grid:", this.grid);
@@ -2128,7 +2023,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         drawGrid: function() {
-            
             // remove grid if drawn previously
             if (this.grid != null) {
                 console.log("there was a previous grid. remove it. grid:", this.grid);
@@ -2140,6 +2034,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // will get mm or inches for grid
             var widthHeightOfGrid; //= this.getUnitVal(200);
             var subSectionsOfGrid; //= this.getUnitVal(10);
+            
             if (this.isUnitsMm) {
                 widthHeightOfGrid = 200; // 200 mm grid should be reasonable
                 subSectionsOfGrid = 10; // 10mm (1 cm) is good for mm work
@@ -2162,18 +2057,16 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             helper.material.opacity = 0.15;
             helper.material.transparent = true;
             helper.receiveShadow = false;
+            
             console.log("helper grid:", helper);
             this.grid = helper;
             this.sceneAdd(this.grid);
-            //this.scene.add(helper);
-
         },
         drawExtentsLabels: function() {
             this.decorateExtents();
         },
-        axes: null, // global property to store axes that we drew
+
         drawAxes: function() {
-            
             // remove axes if they were drawn previously
             if (this.axes != null) {
                 console.log("there was a previous axes. remove it. axes:", this.axes);
@@ -2190,7 +2083,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             axes.material.opacity = 0.8;
             axes.material.depthWrite = false;
             axes.position.set(0,0,-0.0001);
-            //this.scene.add(axes);
             axesgrp.add(axes);
 
             // add axes labels
@@ -2201,6 +2093,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 text: "X",
                 color: "#ff0000"
             });
+            
             var ylbl = this.makeSprite(this.scene, "webgl", {
                 x: 0,
                 y: this.getUnitVal(110),
@@ -2208,6 +2101,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 text: "Y",
                 color: "#00ff00"
             });
+            
             var zlbl = this.makeSprite(this.scene, "webgl", {
                 x: 0,
                 y: 0,
@@ -2219,14 +2113,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             axesgrp.add(xlbl);
             axesgrp.add(ylbl);
             axesgrp.add(zlbl);
+            
             this.axes = axesgrp;
             this.sceneAdd(this.axes);
-
         },
-        colorBackground: 0xeeeeee, // this is the background color of the 3d viewer
-        disableAA: false,
-        createScene: function (element) {
 
+        createScene: function (element) {
             console.log("inside createScene: element:", element);
 
             // store element on this object
@@ -2270,28 +2162,20 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             scene.add(camera);
 
             // Controls
-            //var mouseEvtContainer = $('#com-chilipeppr-widget-3dviewer-renderArea');
-            //console.log(mouseEvtContainer);
-            //controls = new THREE.TrackballControls(camera, mouseEvtContainer[0]);
             controls = new THREE.TrackballControls(camera, element[0]);
             this.controls = controls; // set property for later use
-            //controls = new THREE.OrbitControls(camera);
             
             controls.noPan = false;
             controls.dynamicDampingFactor = 0.99; //0.15;
             controls.rotateSpeed = 2.0;
             
-            //controls.staticMoving = true;
-            //controls.target.x = 50;
-            //controls.target.y = 100;
-            //controls.autoRotate = true;
             console.log("controls:", controls);
-            //controls.target.z = 100;
-            //controls.addEventListener( 'change', render );
+            
             document.addEventListener( 'mousemove', controls.update.bind( controls ), false );
             document.addEventListener( 'touchmove', controls.update.bind( controls ), false );
-
+            
             // Renderer
+            // TODO: review renderer setup, see if we can open up any other options or optimizations
             var renderer;
             var webgl = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
 
@@ -2310,7 +2194,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 $('#' + this.id + ' .youhavenowebgl').removeClass("hidden");
                 return;
             };
-
             
             this.renderer = renderer;
             
@@ -2320,8 +2203,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             renderer.setPixelRatio( window.devicePixelRatio );
             
             element.append(renderer.domElement);
-            //renderer.autoClear = true;
-            //renderer.clear();
             
             // cast shadows
             renderer.shadowMap.enabled = this.showShadow;
@@ -2329,55 +2210,47 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
 
             // Action!
-            //controls.addEventListener( 'change', test );
-            //element.on('change', test);
             var mouseEvtContainer = $('#com-chilipeppr-widget-3dviewer-renderArea');
             console.log(mouseEvtContainer);
-            //mouseEvtContainer.on('mousemove mousedown mousewheel hover click dblclick scroll touchstart touchmove touchenter focus resize', this.wakeAnimate.bind(this));
-            //controls.addEventListener( 'change', this.wakeAnimate.bind(this));
+
             controls.addEventListener( 'start', this.animNoSleep.bind(this));
             controls.addEventListener( 'end', this.animAllowSleep.bind(this));
-            //mouseEvtContainer.on('', wakeAnimate);
-            /*
-            function test(evt) {
-                console.log("got event listener", evt);
-            }
-            function slowDown() {
-                requestAnimationFrame(animate); // And repeat...
-            }
-            */
+            
             console.log("this wantAnimate:", this);
+            
             this.wantAnimate = true;
             this.wakeAnimate();
 
             // Fix coordinates up if window is resized.
             var that = this;
             $(window).on('resize', function () {
-                //console.log("got resize event. resetting aspect ratio.");
+                // TODO: explore a way to correctly callback, rather than duplicate code.
                 renderer.setSize(element.width(), element.height());
+            
                 camera.aspect = element.width() / element.height();
                 camera.updateProjectionMatrix();
+            
                 controls.screen.width = window.innerWidth;
                 controls.screen.height = window.innerHeight;
-                that.wakeAnimate();
-                //render();
+            
+                this.wakeAnimate();
             });
 
             return scene;
         },
         resize: function() {
-            //console.log("got resize event. resetting aspect ratio.");
-            this.renderer.setSize(this.element.width(), this.element.height());
-            this.camera.aspect = this.element.width() / this.element.height();
-            this.camera.updateProjectionMatrix();
-            this.controls.screen.width = window.innerWidth;
-            this.controls.screen.height = window.innerHeight;
+            renderer.setSize(element.width(), element.height());
+            
+            camera.aspect = element.width() / element.height();
+            camera.updateProjectionMatrix();
+            
+            controls.screen.width = window.innerWidth;
+            controls.screen.height = window.innerHeight;
+            
             this.wakeAnimate();
         },
-        mytimeout: null,
-        renderFrameCtr: 0, // keep track of fps
-        fpsCounterInterval: null,
-        fpsEl: null,
+        
+        // TODO: review all fps/animation code
         fpsCounterStart: function() {
             
             if (this.fpsEl == null) {
@@ -2435,7 +2308,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             if (rate == 30) this.frameRateDelayMs = 32;
             if (rate == 60) this.frameRateDelayMs = 0;
         },
-        animEnable: true, // boolean tracking whether we allow animation
         animateDisabled: function() {
             console.log("disabling animation");
             this.animEnable = false;
@@ -2445,35 +2317,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             console.log("enabling animation");
             this.animEnable = true;
         },
-        // reduce rate by 2, 3, 4, etc. 60fps becomes 30fps
-        //frameRateSkipEvery: [false, true, true, true, true], 
-        //frameRateSkipEvery: [false], 
-        //frameRateCtr: 0, // counts to skip animate
-        
-        // 200 = 5fps, 100 = 10fps, 70=15fps, 50=20fps, 40=25fps, 30=30fps
-        fpsRate: 30,
-        frameRateDelayMs: 32, 
         animate: function() {
-            
             // if 3d viewer disabled, exit
             if (this.animEnable == false) {
                 console.log("animate(). this.animEnable false, so exiting.");
                 return;
             }
-            
-            // see if we should exit to reduce frame count
-            /*
-            if (this.frameRateSkipEvery[this.frameRateCtr]) {
-                if (this.frameRateCtr == this.frameRateSkipEvery.length - 1)
-                    this.frameRateCtr = 0;
-                else
-                    this.frameRateCtr++;
-                requestAnimationFrame(this.animate.bind(this));
-                return;
-            }
-            this.frameRateCtr++;
-            if (this.frameRateCtr > 200) this.frameRateCtr = 0; // prevent overruns
-            */
             
             TWEEN.update();
             if (this.wantAnimate) {
@@ -2488,22 +2337,20 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     requestAnimationFrame(this.animate.bind(this));
                 }
             }
+            
             this.controls.update();
             this.renderer.render(this.scene, this.camera);
             this.renderFrameCtr++;
         },
         wakeAnimate: function(evt) {
-            
             // if 3d viewer disabled, exit
             if (this.animEnable == false) {
                 return;
             }
             
-            //console.log("wakeAnimate:", evt);
             this.wantAnimate = true;
             this.fpsCounterStart();
-            //controls.update();
-            //clearTimeout(this.mytimeout);
+            
             if (!this.mytimeout) {
                 this.mytimeout = setTimeout(this.sleepAnimate.bind(this), 10000);
                 //console.log("wakeAnimate");
@@ -2524,16 +2371,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         cancelSleep: function() {
             clearTimeout(this.mytimeout);
         },
-        isNoSleepMode: false,
         animNoSleep: function() {
-            //console.log("anim no sleep");
             this.isNoSleepMode = true;
-            //this.cancelSleep();
             this.wakeAnimate();
         },
         animAllowSleep: function() {
-            //console.log("anim allow sleep");
-            
             // even if we're being asked to allow sleep
             // but the tween is playing, don't allow it
             if (this.tweenIsPlaying) return;
@@ -2542,6 +2384,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.isNoSleepMode = false;
             if (!this.mytimeout) this.mytimeout = setTimeout(this.sleepAnimate.bind(this), 5000);
         },
+        
+        
+        
         /**
          * Parses a string of gcode instructions, and invokes handlers for
          * each type of command.
@@ -2549,7 +2394,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
          * Special handler:
          *   'default': Called if no other handler matches.
          */
-        
         GCodeParser: function (handlers) {
             this.handlers = handlers || {};
             
@@ -2558,10 +2402,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.isUnitsMm = true;
             
             this.parseLine = function (text, info) {
-                //text = text.replace(/;.*$/, '').trim(); // Remove comments
-                //text = text.replace(/\(.*$/, '').trim(); // Remove comments
-                //text = text.replace(/<!--.*?-->/, '').trim(); // Remove comments
-                
                 var origtext = text;
                 // remove line numbers if exist
                 if (text.match(/^N/i)) {
@@ -2588,15 +2428,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // make sure to remove inline comments
                     text = text.replace(/\(.*?\)/g, "");
                 }
-                //console.log("gcode txt:", text);
                 
                 if (text && !isComment) {
-                    //console.log("there is txt and it's not a comment");
-                    //console.log("");
-                    // preprocess XYZIJ params to make sure there's a space
-                    //text = text.replace(/(X|Y|Z|I|J|K)/ig, "$1 ");
-                    //console.log("gcode txt:", text);
-                    
                     // strip off end of line comment
                     text = text.replace(/(;|\().*$/, ""); // ; or () trailing
                     //text = text.replace(/\(.*$/, ""); // () trailing
@@ -2612,30 +2445,16 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // cmd is what's assumed
                         isComment = false;
                         if (!cmd.match(/^(G|M|T)/i)) {
-                            // if comment, drop it
-                            /*
-                            if (cmd.match(/(;|\(|<)/)) {
-                                // is comment. do nothing.
-                                isComment = true;
-                                text = origtext;
-                                //console.log("got comment:", cmd);
-                            } else {
-                            */
-
-                                //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
-                                // we need to use the last gcode cmd
-                                cmd = this.lastArgs.cmd;
-                                //console.log("using last cmd:", cmd);
-                                tokens.unshift(cmd); // put at spot 0 in array
-                                //console.log("tokens:", tokens);
-                            //}
+                            //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
+                            // we need to use the last gcode cmd
+                            cmd = this.lastArgs.cmd;
+                            tokens.unshift(cmd); // put at spot 0 in array
                         } else {
-                            
                             // we have a normal cmd as opposed to just an xyz pos where
                             // it assumes you should use the last cmd
                             // however, need to remove inline comments (TODO. it seems parser works fine for now)
-                            
                         }
+                        
                         var args = {
                             'cmd': cmd,
                             'text': text,
@@ -2653,9 +2472,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                 if (token && token.length > 0) {
                                     var key = token[0].toLowerCase();
                                     var value = parseFloat(token.substring(1));
-                                    //console.log("value:", value, "key:", key);
-                                    //if (isNaN(value))
-                                    //    console.error("got NaN. val:", value, "key:", key, "tokens:", tokens);
+                                    
                                     args[key] = value;
                                 } else {
                                     //console.log("couldn't parse token in foreach. weird:", token);
@@ -2671,9 +2488,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         } else {
                             //console.log("this was a comment, so didn't save lastArgs");
                         }
-                        //console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
+                        
                         if (handler) {
-                            
                             // do extra check here for units. units are
                             // specified via G20 or G21. We need to scan
                             // each line to see if it's inside the line because
@@ -2697,10 +2513,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             } else {
                                 // use feedrate from prior lines
                                 args.feedrate = this.lastFeedrate;
-                                //if (args.feedrate 
                             }
-                            
-                            //console.log("about to call handler. args:", args, "info:", info, "this:", this);
                             
                             return handler(args, info, this);
                         } else {
@@ -2735,10 +2548,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
             }
         },
-        colorG0: 0x00ff00,
-        colorG1: 0x0000ff,
-        colorG2: 0x999900,
-        lineWidth: 1,
+        
         createObjectFromGCode: function (gcode, indxMax) {
             //debugger;
             // Credit goes to https://github.com/joewalnes/gcode-viewer
@@ -2806,7 +2616,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             };
 
             this.newLayer = function (line) {
-                //console.log("layers:", layers, "layers.length", layers.length);
                 layer = {
                     type: {},
                     layer: layers.length,
@@ -2816,32 +2625,30 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             };
 
             this.getLineGroup = function (line, args) {
-                //console.log("getLineGroup:", line);
                 if (layer == undefined) this.newLayer(line);
+                
                 var speed = Math.round(line.e / 1000);
                 var grouptype = (line.extruding ? 10000 : 0) + speed;
-                //var color = new THREE.Color(line.extruding ? 0xff00ff : 0x0000ff);
                 var color = new THREE.Color(line.extruding ? 0xff00ff : this.colorG1);
+                
                 if (line.g0) {
                     grouptype =  "g0";
-                    //color = new THREE.Color(0x00ff00);
                     color = new THREE.Color(this.colorG0);
                 } else if (line.g2) {
                     grouptype = "g2";
-                    //color = new THREE.Color(0x999900);
                     color = new THREE.Color(this.colorG2);
                 } else if (line.arc) {
                     grouptype = "arc";
                     color = new THREE.Color(0x0099ff);
                 }
+                
                 // see if we have reached indxMax, if so draw, but 
                 // make it ghosted
                 if (args.indx > indxMax) {
                     grouptype = "ghost";
-                    //console.log("args.indx > indxMax", args, indxMax);
                     color = new THREE.Color(0x000000);
                 }
-                //if (line.color) color = new THREE.Color(line.color);
+
                 if (layer.type[grouptype] == undefined) {
                     layer.type[grouptype] = {
                         type: grouptype,
@@ -2865,36 +2672,30 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             };
 
             this.drawArc = function(aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise, plane) {
-                //console.log("drawArc:", aX, aY, aZ, aRadius, aStartAngle, aEndAngle, aClockwise);
                 var ac = new THREE.ArcCurve(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise);
-                //console.log("ac:", ac);
+
                 var acmat = new THREE.LineBasicMaterial({
                     color: 0x00aaff,
                     opacity: 0.5,
                     transparent: true
                 });
+                
                 var acgeo = new THREE.Geometry();
                 var ctr = 0;
                 var z = aZ;
+                
                 ac.getPoints(20).forEach(function (v) {
-                    //console.log(v);
                     z = (((endaZ - aZ) / 20) * ctr) + aZ;
                     acgeo.vertices.push(new THREE.Vector3(v.x, v.y, z));
                     ctr++;
                 });
                 var aco = new THREE.Line(acgeo, acmat);
-                //aco.position.set(pArc.x, pArc.y, pArc.z);
-                //console.log("aco:", aco);
                 this.extraObjects[plane].push(aco);
+                
                 return aco;
             };
             
             this.drawArcFrom2PtsAndCenter = function(vp1, vp2, vpArc, args) {
-                //console.log("drawArcFrom2PtsAndCenter. vp1:", vp1, "vp2:", vp2, "vpArc:", vpArc, "args:", args);
-                
-                //var radius = vp1.distanceTo(vpArc);
-                //console.log("radius:", radius);
-                
                 // Find angle
                 var p1deltaX = vpArc.x - vp1.x;
                 var p1deltaY = vpArc.y - vp1.y; 
@@ -2904,7 +2705,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 var p2deltaY = vpArc.y - vp2.y; 
                 var p2deltaZ = vpArc.z - vp2.z;
 
-                switch(args.plane){
+                switch (args.plane) {
                     case "G18":
                         var anglepArcp1 = Math.atan(p1deltaZ / p1deltaX);
                         var anglepArcp2 = Math.atan(p2deltaZ / p2deltaX);
@@ -2921,16 +2722,16 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 // Draw arc from arc center
                 var radius = vpArc.distanceTo(vp1);
                 var radius2 = vpArc.distanceTo(vp2);
-                //console.log("radius:", radius);
                 
-                if (Number((radius).toFixed(2)) != Number((radius2).toFixed(2))) console.log("Radiuses not equal. r1:", radius, ", r2:", radius2, " with args:", args, " rounded vals r1:", Number((radius).toFixed(2)), ", r2:", Number((radius2).toFixed(2)));
+                if (Number((radius).toFixed(2)) != Number((radius2).toFixed(2))) {
+                    console.log("Radiuses not equal. r1:", radius, ", r2:", radius2, " with args:", args, " rounded vals r1:", Number((radius).toFixed(2)), ", r2:", Number((radius2).toFixed(2)));
+                }
                 
                 // arccurve
                 var clwise = true;
                 if (args.clockwise === false) clwise = false;
-                //if (anglepArcp1 < 0) clockwise = false;
 
-                switch(args.plane){
+                switch (args.plane) {
                     case "G19":
                         if (p1deltaY >= 0) anglepArcp1 += Math.PI;
                         if (p2deltaY >= 0) anglepArcp2 += Math.PI;
@@ -2939,11 +2740,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         if (p1deltaX >= 0) anglepArcp1 += Math.PI;
                         if (p2deltaX >= 0) anglepArcp2 += Math.PI;
                 }
-
-                if (anglepArcp1 === anglepArcp2 && clwise === false)
+                
+                if (anglepArcp1 === anglepArcp2 && clwise === false) {
                     // Draw full circle if angles are both zero, 
                     // start & end points are same point... I think
-                    switch(args.plane){
+                    switch (args.plane) {
                         case "G18":
                             var threeObj = this.drawArc(vpArc.x, vpArc.z, (-1*vp1.y), (-1*vp2.y), radius, anglepArcp1, (anglepArcp2 + (2*Math.PI)), clwise, "G18");
                             break;
@@ -2953,8 +2754,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         default:
                             var threeObj = this.drawArc(vpArc.x, vpArc.y, vp1.z, vp2.z, radius, anglepArcp1, (anglepArcp2 + (2*Math.PI)), clwise, "G17");
                     }
-                else
-                    switch(args.plane){
+                } else {
+                    switch (args.plane) {
                         case "G18":
                             var threeObj = this.drawArc(vpArc.x, vpArc.z, (-1*vp1.y), (-1*vp2.y), radius, anglepArcp1, anglepArcp2, clwise, "G18");
                             break;
@@ -2964,12 +2765,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         default:
                             var threeObj = this.drawArc(vpArc.x, vpArc.y, vp1.z, vp2.z, radius, anglepArcp1, anglepArcp2, clwise, "G17");
                     }
+                }
+                
                 return threeObj;
             };
             
-            this.addSegment = function (p1, p2, args) {
-                //console.log("");
-                //console.log("addSegment p2:", p2);
+            this.addSegment = function(p1, p2, args) {
                 // add segment to array for later use
                 lines.push({
                     p2: p2,
@@ -2982,30 +2783,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 group.segmentCount++;
                 // see if we need to draw an arc
                 if (p2.arc) {
-                    //console.log("");
-                    //console.log("drawing arc. p1:", p1, ", p2:", p2);
+                    var vp1 = new THREE.Vector3(p1.x, p1.y, p1.z);
+                    var vp2 = new THREE.Vector3(p2.x, p2.y, p2.z);
                     
-                    //var segmentCount = 12;
-                    // figure out the 3 pts we are dealing with
-                    // the start, the end, and the center of the arc circle
-                    // radius is dist from p1 x/y/z to pArc x/y/z
-                    //if(args.clockwise === false || args.cmd === "G3"){
-                    //    var vp2 = new THREE.Vector3(p1.x, p1.y, p1.z);
-                    //    var vp1 = new THREE.Vector3(p2.x, p2.y, p2.z);
-                    //}
-                    //else {
-                        var vp1 = new THREE.Vector3(p1.x, p1.y, p1.z);
-                        var vp2 = new THREE.Vector3(p2.x, p2.y, p2.z);
-                    //}   
                     var vpArc;
                     
                     // if this is an R arc gcode command, we're given the radius, so we
                     // don't have to calculate it. however we need to determine center
                     // of arc
                     if (args.r != null) {
-                        //console.log("looks like we have an arc with R specified. args:", args);
-                        //console.log("anglepArcp1:", anglepArcp1, "anglepArcp2:", anglepArcp2);
-
                         radius = parseFloat(args.r);
                         
                         // First, find the distance between points 1 and 2.  We'll call that q, 
@@ -3032,7 +2818,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
                         var angle_point = undefined;
                         
-                        switch(args.plane){
+                        switch (args.plane) {
                             case "G18":
                                 pArc_1 = {
                                     x: x3 + calc * (p1.z - p2.z) / q,
@@ -3093,26 +2879,20 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                 }
                         }
                         
-                        if((p2.clockwise === true && radius >= 0) || (p2.clockwise === false && radius < 0)) vpArc = new THREE.Vector3(cw.x, cw.y, cw.z);
-                        else vpArc = new THREE.Vector3(ccw.x, ccw.y, ccw.z);
+                        if ((p2.clockwise === true && radius >= 0) || (p2.clockwise === false && radius < 0)) {
+                            vpArc = new THREE.Vector3(cw.x, cw.y, cw.z);
+                        } else {
+                            vpArc = new THREE.Vector3(ccw.x, ccw.y, ccw.z);
+                        } 
                         
                     } else {
-                        // this code deals with IJK gcode commands
-                        /*if(args.clockwise === false || args.cmd === "G3")
-                            var pArc = {
-                                x: p2.arci ? p1.x + p2.arci : p1.x,
-                                y: p2.arcj ? p1.y + p2.arcj : p1.y,
-                                z: p2.arck ? p1.z + p2.arck : p1.z,
-                            };
-                        else*/
                         var pArc = {
                             x: p2.arci ? p1.x + p2.arci : p1.x,
                             y: p2.arcj ? p1.y + p2.arcj : p1.y,
                             z: p2.arck ? p1.z + p2.arck : p1.z,
                         };
-                        //console.log("new pArc:", pArc);
+                        
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
-                        //console.log("vpArc:", vpArc);
                     }
                     
                     var threeObjArc = this.drawArcFrom2PtsAndCenter(vp1, vp2, vpArc, args);
@@ -3121,6 +2901,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     p2.g2 = true;
                     p2.threeObjArc = threeObjArc;
                     group = this.getLineGroup(p2, args);
+                    
                     // these golden lines showing start/end of a g2 or g3 arc were confusing people
                     // so hiding them for now. jlauer 8/15/15
                     /*
@@ -3133,10 +2914,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     geometry.colors.push(group.color);
                     */
                 } else {
-                    geometry.vertices.push(
-                        new THREE.Vector3(p1.x, p1.y, p1.z));
-                    geometry.vertices.push(
-                        new THREE.Vector3(p2.x, p2.y, p2.z));
+                    geometry.vertices.push(new THREE.Vector3(p1.x, p1.y, p1.z));
+                    geometry.vertices.push(new THREE.Vector3(p2.x, p2.y, p2.z));
+                    
                     geometry.colors.push(group.color);
                     geometry.colors.push(group.color);
                 }
@@ -3149,21 +2929,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     bbbox.max.y = Math.max(bbbox.max.y, p2.y);
                     bbbox.max.z = Math.max(bbbox.max.z, p2.z);
                 }
-                if (p2.g0) {
-                    // we're in a toolhead move, label moves
-                    /*
-                    if (group.segmentCount < 2) {
-                    this.makeSprite(this.scene, "webgl", {
-                        x: p2.x,
-                        y: p2.y,
-                        z: p2.z + 0,
-                        text: group.segmentCount,
-                        color: "#ff00ff",
-                        size: 3,
-                    });
-                    }
-                    */
-                }
+                
                 // global bounding box calc
                 bbbox2.min.x = Math.min(bbbox2.min.x, p2.x);
                 bbbox2.min.y = Math.min(bbbox2.min.y, p2.y);
@@ -3210,6 +2976,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     var line = new THREE.Line( geometry, material );
                     gcodeObj = line;
                 }
+                
                 gcodeObj.userData.p2 = p2;
                 gcodeObj.userData.args = args;
                 new3dObj.add(gcodeObj);
@@ -3220,30 +2987,25 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 var dist = 0;
                 if (p2.arc) {
                     // calc dist of all lines
-                    //console.log("this is an arc to calc dist for. p2.threeObjArc:", p2.threeObjArc, "p2:", p2);
                     var arcGeo = p2.threeObjArc.geometry;
-                    //console.log("arcGeo:", arcGeo);
                                         
                     var tad2 = 0;
                     for (var arcLineCtr = 0; arcLineCtr < arcGeo.vertices.length - 1; arcLineCtr++) {
                         tad2 += arcGeo.vertices[arcLineCtr].distanceTo(arcGeo.vertices[arcLineCtr+1]);
                     }
-                    //console.log("tad2:", tad2);
-                    
                     
                     // just do straight line calc
                     var a = new THREE.Vector3( p1.x, p1.y, p1.z );
                     var b = new THREE.Vector3( p2.x, p2.y, p2.z );
                     var straightDist = a.distanceTo(b);
-                    
-                    //console.log("diff of straight line calc vs arc sum. straightDist:", straightDist);
-                    
+                                        
                     dist = tad2;
                     
                 } else {
                     // just do straight line calc
                     var a = new THREE.Vector3( p1.x, p1.y, p1.z );
                     var b = new THREE.Vector3( p2.x, p2.y, p2.z );
+                    
                     dist = a.distanceTo(b);
                 }
                 
@@ -3277,10 +3039,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 p2.distSum = this.totalDist;
                 p2.timeMins = timeMinutes;
                 p2.timeMinsSum = this.totalTime;
-                
-                //console.log("calculating distance. dist:", dist, "totalDist:", this.totalDist, "feedrate:", args.feedrate, "timeMinsToExecute:", timeMinutes, "totalTime:", this.totalTime, "p1:", p1, "p2:", p2, "args:", args);
-                
             }
+            
             this.totalDist = 0;
             this.totalTime = 0;
             
@@ -3315,8 +3075,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 as fast as possible which means no milling or extruding is happening in G0.
                 So, let's color it uniquely to indicate it's just a toolhead move. */
                 G0: function (args, indx) {
-                    //G1.apply(this, args, line, 0x00ff00);
-                    //console.log("G0", args);
                     var newLine = {
                         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
                         y: args.y !== undefined ? cofg.absolute(lastLine.y, args.y) + cofg.offsetG92.y : lastLine.y,
@@ -3324,11 +3082,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
                     };
+                    
                     newLine.g0 = true;
-                    //cofg.newLayer(newLine);
                     
                     cofg.addSegment(lastLine, newLine, args);
-                    //console.log("G0", lastLine, newLine, args, cofg.offsetG92);
+                    
                     lastLine = newLine;
                 },  
                 G1: function (args, indx) {
@@ -3339,7 +3097,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // to the point (90.6, 13.8), extruding material as the move
                     // happens from the current extruded length to a length of
                     // 22.4 mm.
-
                     var newLine = {
                         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
                         y: args.y !== undefined ? cofg.absolute(lastLine.y, args.y) + cofg.offsetG92.y : lastLine.y,
@@ -3348,6 +3105,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
 
                     };
+                    
                     /* layer change detection is or made by watching Z, it's made by
          watching when we extrude at a new Z position */
                     if (cofg.delta(lastLine.e, newLine.e) > 0) {
@@ -3355,14 +3113,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         if (layer == undefined || newLine.z != layer.z) cofg.newLayer(newLine);
                     }
                     cofg.addSegment(lastLine, newLine, args);
-                    //console.log("G1", lastLine, newLine, args, cofg.offsetG92);
+                    
                     lastLine = newLine;
                 },
                 G2: function (args, indx, gcp) {
                     /* this is an arc move from lastLine's xy to the new xy. we'll
                     show it as a light gray line, but we'll also sub-render the
                     arc itself by figuring out the sub-segments . */
-                    
                     args.plane = plane; //set the plane for this command to whatever the current plane is
                     
                     var newLine = {
@@ -3376,16 +3133,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         arck: args.k ? args.k : null,
                         arcr: args.r ? args.r : null,
                     };
-                   
-                    //console.log("G2 newLine:", newLine);
-                    //newLine.g2 = true;
+                    
                     newLine.arc = true;
                     newLine.clockwise = true;
                     if (args.clockwise === false) newLine.clockwise = args.clockwise;
                     cofg.addSegment(lastLine, newLine, args);
-                    //console.log("G2", lastLine, newLine, args, cofg.offsetG92);
+                    
                     lastLine = newLine;
-                    //console.log("G2. args:", args);
                 },
                 G3: function (args, indx, gcp) {
                     /* this is an arc move from lastLine's xy to the new xy. same
@@ -3475,15 +3229,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     cofg.offsetG92.y = (args.y !== undefined ? (args.y === 0 ? newLine.y : newLine.y - args.y) : 0);
                     cofg.offsetG92.z = (args.z !== undefined ? (args.z === 0 ? newLine.z : newLine.z - args.z) : 0);
                     cofg.offsetG92.e = (args.e !== undefined ? (args.e === 0 ? newLine.e : newLine.e - args.e) : 0);
-
-                    //newLine.x = args.x !== undefined ? args.x + newLine.x : newLine.x;
-                    //newLine.y = args.y !== undefined ? args.y + newLine.y : newLine.y;
-                    //newLine.z = args.z !== undefined ? args.z + newLine.z : newLine.z;
-                    //newLine.e = args.e !== undefined ? args.e + newLine.e : newLine.e;
                     
-                    //console.log("G92", lastLine, newLine, args, cofg.offsetG92);
-                    
-                    //lastLine = newLine;
                     cofg.addFakeSegment(args);
                 },
                 M30: function (args) {
@@ -3524,10 +3270,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.isUnitsMm = parser.isUnitsMm;
             
             console.log("inside creatGcodeFromObject. this:", this);
-
             console.log("Layer Count ", layers.length);
 
-            
             var object = new THREE.Object3D();
             
             
@@ -3537,48 +3281,41 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 //      console.log("Layer ", layer.layer);
                 for (var tid in layer.type) {
                     var type = layer.type[tid];
-                    //console.log("Layer:", layer.layer, "type:", type, "segCnt:", type.segmentCount);
-                    // normal geometry (not buffered)
-                    //object.add(new THREE.LineSegments(type.geometry, type.material));
-                    // using buffer geometry
-                    var bufferGeo = this.convertLineGeometryToBufferGeometry( type.geometry, type.color );
+                    
+                    var bufferGeo = this.convertLineGeometryToBufferGeometry(type.geometry, type.color);
                     object.add(new THREE.LineSegments(bufferGeo, type.material));
                 }
             }
+            
             //XY PLANE
             this.extraObjects["G17"].forEach(function(obj) {
-                // non-buffered approach
-                //object.add(obj);
+                var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
                 
-                // buffered approach
-                // convert g2/g3's to buffer geo as well
-                //console.log("extra object:", obj);
-                var bufferGeo = this.convertLineGeometryToBufferGeometry( obj.geometry, obj.material.color );
                 object.add(new THREE.Line(bufferGeo, obj.material));
             }, this);
+            
             //XZ PLANE
             this.extraObjects["G18"].forEach(function(obj) {
-                // buffered approach
-                var bufferGeo = this.convertLineGeometryToBufferGeometry( obj.geometry, obj.material.color );
-                var tmp = new THREE.Line(bufferGeo, obj.material)
+                var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
+                var tmp = new THREE.Line(bufferGeo, obj.material);
+                
                 tmp.rotateOnAxis(new THREE.Vector3(1,0,0),Math.PI/2);
-                object.add(tmp);
-            }, this);
-            //YZ PLANE
-            this.extraObjects["G19"].forEach(function(obj) {
-                // buffered approach
-                var bufferGeo = this.convertLineGeometryToBufferGeometry( obj.geometry, obj.material.color );
-                var tmp = new THREE.Line(bufferGeo, obj.material)
-                tmp.rotateOnAxis(new THREE.Vector3(1,0,0),Math.PI/2);
-                tmp.rotateOnAxis(new THREE.Vector3(0,1,0),Math.PI/2);
+                
                 object.add(tmp);
             }, this);
             
-            // use new approach of building 3d object where each
-            // gcode line is its own segment with its own userData
-            //object = new3dObj;
-
-
+            //YZ PLANE
+            this.extraObjects["G19"].forEach(function(obj) {
+                // buffered approach
+                var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
+                var tmp = new THREE.Line(bufferGeo, obj.material)
+                
+                tmp.rotateOnAxis(new THREE.Vector3(1,0,0),Math.PI/2);
+                tmp.rotateOnAxis(new THREE.Vector3(0,1,0),Math.PI/2);
+                
+                object.add(tmp);
+            }, this);
+            
             console.log("bbox ", bbbox);
 
             // Center
@@ -3588,12 +3325,14 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             bbbox.min.x + ((bbbox.max.x - bbbox.min.x) / 2),
             bbbox.min.y + ((bbbox.max.y - bbbox.min.y) / 2),
             bbbox.min.z + ((bbbox.max.z - bbbox.min.z) / 2));
+            
             console.log("center ", center);
 
             var center2 = new THREE.Vector3(
             bbbox2.min.x + ((bbbox2.max.x - bbbox2.min.x) / 2),
             bbbox2.min.y + ((bbbox2.max.y - bbbox2.min.y) / 2),
             bbbox2.min.z + ((bbbox2.max.z - bbbox2.min.z) / 2));
+            
             console.log("center2 of all gcode ", center2);
 
             // store meta data in userData of object3d for later use like in animation
@@ -3606,19 +3345,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             object.userData.threeObjs = new3dObj;
             
             console.log("userData for this object3d:", object.userData);
-            /*
-            this.camera.target.x = center2.x;
-            this.camera.target.y = center2.y;
-            this.camera.target.z = center2.z;
-            */
-
-            //object.position = center.multiplyScalar(-scale);
-
-            //object.scale.multiplyScalar(scale);
             console.log("final object:", object);
 
             return object;
         },
+        
         convertLineGeometryToBufferGeometry: function(lineGeometry, color) {
             
             var positions = new Float32Array( lineGeometry.vertices.length * 3 );
