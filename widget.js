@@ -188,6 +188,20 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         element: null, // scene element
         isUnitsMm: true, // true for mm, false for inches
         
+        
+        // animation state
+        animationLatencyTimer: null,
+        animationLatencyDelay: 32,
+        animationLatencyDelayDefault: 32,
+        
+        moveAnimate: false,
+        tweenAnimate: false,
+        inspectAnimate: false,
+        
+        // render state & fps tracking
+        fpsCalculationTimer: null,
+        renderFrameCount: 0, // keep track of fps
+        
         tween: null,
         tweenHighlight: null,
         tweenIndex: null,
@@ -195,7 +209,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         tweenPaused: false,
         tweenIsPlaying: false,
         
-        wantAnimate: true, // we automatically timeout rendering to save on cpu
         
         zheighttest: 0, // test toolhead going up in z
         textFont: false, // three.js font object
@@ -218,15 +231,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         jogArrowShadow: null,
         jogCurPos: null,
         
-        // render state & fps tracking
-        mytimeout: null,
-        renderFrameCtr: 0, // keep track of fps
-        fpsRate: 30,
-        fpsCounterInterval: null,
-        fpsEl: null,
-        frameRateDelayMs: 32, 
-        isNoSleepMode: false,
-        
         // basic properties
         colorBackground: 0xeeeeee, // this is the background color of the 3d viewer
         colorG0: 0x00ff00,
@@ -235,7 +239,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         lineWidth: 1,
         
         // options
-        animEnable: true, // boolean tracking whether we allow animation
+        disableAnimation: false, // boolean tracking whether we allow animation
         
         disableAA: false,
         showShadow: true,
@@ -271,11 +275,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     var files = event.originalEvent.dataTransfer.files;
                     if (files.length > 0) {
                         var reader = new FileReader();
+                        
                         reader.onload = function () {
                             console.log("opening file. reader:", reader);
-                            console.log ("stringify", JSON.stringify(reader.result, null, 2) );
+                            console.log ("stringify", JSON.stringify(reader.result, null, 2));
                             that.openGCodeFromText(reader.result);
                         };
+                        
                         reader.readAsText(files[0]);
                     }
                 });
@@ -285,12 +291,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // Load existing state/options from localStorage
             this.disableAA = (localStorage.getItem('disable-aa') == 'true') ? true : false;
             this.showShadow = (localStorage.getItem('toolhead-shadow') == 'true' ? true : false);
-            
-            this.fpsRate = localStorage.getItem('fpsRate');
-            if (this.fpsRate) {
-                console.log("got prior FPS Rate, setting it now:  ", this.fpsRate, "//rk");
-                this.setFrameRate(parseInt(this.fpsRate));
-            }
+            this.disableAnimation = (localStorage.getItem('disable-animation') == 'true' ? true : false);
             
             
             // setup the scene and attempt to load the last object
@@ -324,7 +325,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             // Download and attach the Fork Widget elements in the dropdown
             this.forkSetup();
-                        
+            
+            // draw our workspace            
+            this.drawAxesToolAndExtents()
+            
             
             // subscribe to gotoline signal so we can move toolhead to correct location
             // to sync with the gcode sender
@@ -343,10 +347,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // setup more pubsub to allow other widgets to inject objects to our scene
             this.setupScenePubSub();
             
-
-            
-            this.drawAxesToolAndExtents()
-            
             // hide the pan/zoom/orbit msg after 1 minute
             setTimeout(function() {
                 console.log("hiding pan/zoom/orbit msg");
@@ -356,7 +356,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         setupScenePubSub: function() {
             // these pubsubs let others add objects to our 3d scene
-            chilipeppr.subscribe("/" + this.id + "/wakeanimate", this, this.wakeAnimate);
+            // TODO: wakeAnimate change
+            chilipeppr.subscribe("/" + this.id + "/wakeanimate", this, this.animate);
             chilipeppr.subscribe("/" + this.id + "/sceneadd", this, this.sceneAdd);
             chilipeppr.subscribe("/" + this.id + "/sceneremove", this, this.sceneRemove);
             chilipeppr.subscribe("/" + this.id + "/sceneclear", this, this.sceneClear);
@@ -468,7 +469,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         inspectKeyDown: function(evt) {
             if ((evt.shiftKey)  && !this.isInspectSelect) {
-                this.wakeAnimate();
+                // TODO: wakeAnimate change
+                this.animate();
                 this.setupInspect(evt);
             }
         },
@@ -522,8 +524,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
             
             this.createInspectArrow();
-            
-            this.wakeAnimate();
             
             console.log("inspectMouseMove. evt:", evt);
             
@@ -605,6 +605,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     this.inspectDlgEl.addClass("hidden");
                 }
             }
+            
+            // TODO find the best way to handle this state, maybe delay within this entire method
+            this.animate();
         },
         
         createGlow: function(threeObj) {
@@ -741,7 +744,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         jogKeyDown: function(evt) {
             if ((evt.ctrlKey)  && !this.isJogSelect) {
-                this.wakeAnimate();
+                // TODO: wakeAnimate change
+                this.animate();
                 this.setupJog(evt);
             } else {
                 //console.log("we are already jogging. ignoring keydown.");
@@ -882,7 +886,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 return;
             }
             
-            this.wakeAnimate();
+            // TODO: wakeAnimate change
+            this.animate();
             
             var mouse = {};
             mouse.x = ( evt.clientX / window.innerWidth ) * 2 - 1;
@@ -912,9 +917,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
 
         setupCogMenu: function() {
-            $('.com-chilipeppr-widget-3dviewer-settings-aa').click( this.onToggleAAClick.bind(this));
-            $('.com-chilipeppr-widget-3dviewer-settings-shadows').click( this.onToggleShadowClick.bind(this));
-            
+            $('.com-chilipeppr-widget-3dviewer-settings-aa').click(this.onToggleAAClick.bind(this));
+            $('.com-chilipeppr-widget-3dviewer-settings-shadows').click(this.onToggleShadowClick.bind(this));
+            $('.com-chilipeppr-widget-3dviewer-settings-animation').click(this.onToggleAnimationClick.bind(this));
         },
         
         setCogMenuState: function() {
@@ -925,7 +930,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 toggleShadowItem.removeClass('alert-info');
             }
             
-            console.log('disable-aa is ' + this.disableAA);
             var toggleAAItem = $('.com-chilipeppr-widget-3dviewer-settings-aa');
             if (!this.disableAA && !toggleAAItem.hasClass('alert-info')) {
                 toggleAAItem.addClass('alert-info');
@@ -933,9 +937,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 toggleAAItem.removeClass('alert-info');
             }
             
-            $('.com-chilipeppr-widget-3dviewer-settings-fr').removeClass('alert-info');
-            $('.com-chilipeppr-widget-3dviewer-settings-fr-' + this.fpsRate).addClass('alert-info');
-            
+            var enableAnimationItem = $('.com-chilipeppr-widget-3dviewer-settings-animation');
+            if (!this.disableAnimation && !enableAnimationItem.hasClass('alert-info')) {
+                enableAnimationItem.addClass('alert-info');
+            } else if (this.disableAnimation) {
+                enableAnimationItem.removeClass('alert-info');
+            }
         },
         
         onToggleAAClick: function(evt, param) {
@@ -963,7 +970,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.renderer.shadowMap.enabled = this.showShadow;
             
             this.setCogMenuState();
+            
             this.drawToolhead();
+        },
+        
+        onToggleAnimationClick: function(evt, param) {
+            console.log("got onToggleAnimationClick. evt:", evt, "param:", param);
+            this.disableAnimation = !this.disableAnimation; // toggle
+            
+            localStorage.setItem('disable-animation', (this.disableAnimation) ? 'true' : 'false');
+            console.log ("Set disable-animation in storage:  ", (this.disableAnimation) ? 'true' : 'false');
+            
+            this.setCogMenuState();
         },
         
         setupFpsMenu: function() {
@@ -981,7 +999,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.setFrameRate(fr);
             
             this.setCogMenuState();
-            this.wakeAnimate();
+            
+            // TODO: wakeAnimate change
+            this.animate();
         },
         
         
@@ -1038,12 +1058,17 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         
         sceneAdd: function(obj) {
             console.log("sceneAdd. obj:", obj);
-            this.wakeAnimate();
+            
+            // TODO: wakeAnimate change
+            this.animate();
             this.scene.add(obj);
         },
         sceneRemove: function(obj) {
             console.log("sceneRemove. obj:", obj);
-            this.wakeAnimate();
+            
+            // TODO: wakeAnimate change
+            this.animate();
+            
             if (obj && 'traverse' in obj) {
                 this.scene.remove(obj);
                 obj.traverse( function ( child ) {
@@ -1056,7 +1081,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         sceneClear: function() {
             this.stopSampleRun();
-            this.wakeAnimate();
+            // TODO: wakeAnimate change
+            this.animate();
             this.object.children = [];
             this.sceneRemove(this.decorate);
         },
@@ -1172,7 +1198,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         openGCodeFromText: function (gcode) {
             console.log("openGcodeFromText");
-            this.wakeAnimate();
 
             if (this.object) {
                 this.stopSampleRun();
@@ -1187,7 +1212,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.drawAxesToolAndExtents();
             this.onUnitsChanged();
             this.setDetails(this.object.userData.lines.length + " GCode Lines");
-            this.wakeAnimate();
+            
+            // TODO: wakeAnimate change
+            this.animate();
             
             // TODO: maybe we remove this logic all-together
             // we can get a QuotaExceededError here, so catch it
@@ -1246,7 +1273,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         viewExtents: function () {
             console.log("viewExtents. object.userData:", this.object.userData);
             console.log("controls:", this.controls);
-            this.wakeAnimate();
+            
+            // TODO: wakeAnimate change
+            this.moveAnimate = true;
+            this.animate();
+            this.moveAnimate = false;
             
             // lets override the bounding box with a newly
             // generated one
@@ -1337,6 +1368,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         stopSampleRun: function (evt) {
             console.log("stopSampleRun. tween:", this.tween);
+            this.tweenAnimate = false;
+            
             this.tweenIsPlaying = false;
 
             if (this.tweenHighlight) this.scene.remove(this.tweenHighlight);
@@ -1346,28 +1379,43 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             $('.com-chilipeppr-widget-3d-menu-samplerunstop').prop('disabled', true);
             $('.com-chilipeppr-widget-3d-menu-samplerunstop').popover('hide');
             
-            this.animAllowSleep();
+            // TODO: animAllowSleep
+            //this.animAllowSleep();
         },
         pauseSampleRun: function () {
             console.log("pauseSampleRun");
             if (this.tweenPaused) {
                 console.log("unpausing tween");
-                this.animNoSleep();
+                
+                // TODO: fix
+                //this.animNoSleep();
+                this.tweenAnimate = true;
+                
                 this.tweenIsPlaying = true;
                 this.tweenPaused = false;
                 this.playNextTween();
+                
+                this.animate();
             } else {
                 console.log("pausing tween on next playNextTween()");
+                this.tweenAnimate = false;
+                
                 this.tweenIsPlaying = false;
                 this.tweenPaused = true;
-                this.animAllowSleep();
+                
+                // TODO: animAllowSleep
+                //this.animAllowSleep();
+                this.animate();
             }
         },
         gotoXyz: function(data) {
             // we are sent this command by the CNC controller generic interface
             console.log("gotoXyz. data:", data);
             
-            this.animNoSleep();
+            // TODO: fix
+            //this.animNoSleep();
+            this.tweenAnimate = false;
+            
             this.tweenIsPlaying = false;
             this.tweenPaused = true;
             
@@ -1402,15 +1450,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     shadow.position.setX(posZ * -1); // make x be z offset
                 }
             }
-            
-            this.animAllowSleep();
+            // TODO: animAllowSleep
+            //this.animAllowSleep();
         },
         gotoLine: function(data) {
             // this method is sort of like playNextTween, but we are jumping to a specific
             // line based on the gcode sender
             console.log("got gotoLine. data:", data);
             
-            this.animNoSleep();
+            // TODO: fix
+            //this.animNoSleep();
+            this.tweenAnimate = true;
+            
             this.tweenIsPlaying = false;
             this.tweenPaused = true;
             
@@ -1430,7 +1481,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
             
             this.lookAtToolHead();
-            this.animAllowSleep();
+            
+            // TODO: animAllowSleep
+            //this.animAllowSleep();
             
             /* GOOD STUFF BUT IF DON'T WANT ANIM*/
             if (this.tweenHighlight) this.scene.remove(this.tweenHighlight);
@@ -1438,12 +1491,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             if (data.anim && data.anim == "anim") {
                 console.log("being asking to animate gotoline");
-                this.animNoSleep();
+                // TODO: fix
+                //this.animNoSleep();
+                this.tweenAnimate = true;
+                
                 this.tweenPaused = false;
                 this.tweenIsPlaying = true;
                 this.tweenIndex = data.line;
+                
                 this.playNextTween(true);
             }
+            
+            this.animate();
         },
         playNextTween: function (isGotoLine) {
 
@@ -1550,12 +1609,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         playSampleRun: function (evt) {
             console.log("controls:", this.controls);
 
-            this.animNoSleep();
+            // TODO: fix
+            //this.animNoSleep();
             $('.com-chilipeppr-widget-3d-menu-samplerun').prop('disabled', true);
             $('.com-chilipeppr-widget-3d-menu-samplerun').popover('hide');
             $('.com-chilipeppr-widget-3d-menu-samplerunstop').prop('disabled', false);
             $('.com-chilipeppr-widget-3d-menu-samplerunpause').prop('disabled', false);
 
+            this.tweenAnimate = true;
+            
             this.tweenPaused = false;
             this.tweenIsPlaying = true;
             this.tweenIndex = 0;
@@ -1598,7 +1660,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             this.tween = tween;
             this.tweenIndex = 0;
+            
             this.tween.start();
+            
+            this.animate();
         },
         
 
@@ -1876,7 +1941,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             var material = new THREE.SpriteMaterial({
                 map: texture,
-                useScreenCoordinates: false,
                 transparent: true,
                 opacity: 0.6
             });
@@ -2147,29 +2211,30 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // Camera...
             // If you make the near and far too much you get
             // a fail on the intersectObjects()
-            var fov = 65,
-                aspect = element.width() / element.height(),
-                near = 1, //01, // 1e-6, //
-                far = 1000,
-                camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+            var fov = 65;
+            var aspect = element.width() / element.height();
+            var near = 1; //01, // 1e-6, //
+            var far = 1000;
+            var camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
             
-            this.camera = camera;
             camera.rotationAutoUpdate = true;
             camera.position.x = 10;
             camera.position.y = -100;
             camera.position.z = 200;
+            this.camera = camera;
             
             scene.add(camera);
 
             // Controls
-            controls = new THREE.TrackballControls(camera, element[0]);
-            this.controls = controls; // set property for later use
-            
+            controls = new THREE.TrackballControls(camera, element[0]);            
             controls.noPan = false;
             controls.dynamicDampingFactor = 0.99; //0.15;
             controls.rotateSpeed = 2.0;
             
+            this.controls = controls; // set property for later use
+            
             console.log("controls:", controls);
+            
             
             document.addEventListener( 'mousemove', controls.update.bind( controls ), false );
             document.addEventListener( 'touchmove', controls.update.bind( controls ), false );
@@ -2179,212 +2244,125 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var renderer;
             var webgl = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
 
-            if (webgl) {
-                console.log('WebGL Support found!  Success: CP will work optimally on this device!');
-    
-                renderer = new THREE.WebGLRenderer({
-                    antialias: !this.disableAA,
-                    preserveDrawingBuffer: false,
-                    alpha: true,
-                    logarithmicDepthBuffer: false
-                });
-            } else {
+            if (!webgl) {
                 console.error('No WebGL Support found! CRITICAL ERROR!');
+                
                 chilipeppr.publish("/com-chilipeppr-elem-flashmsg/flashmsg", "No WebGL Found!", "This device/browser does not support WebGL or WebGL has crashed. Chilipeppr needs WebGL to render the 3D View.", 10 * 1000);
+               
                 $('#' + this.id + ' .youhavenowebgl').removeClass("hidden");
                 return;
-            };
+            }
             
-            this.renderer = renderer;
+            console.log('WebGL Support found!  Success: CP will work optimally on this device!');
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: !this.disableAA,
+                preserveDrawingBuffer: false,
+                alpha: true,
+                logarithmicDepthBuffer: false
+            });
             
+            // base properties
             renderer.setClearColor(this.colorBackground, 1);
-            
             renderer.setSize(element.width(), element.height());
             renderer.setPixelRatio( window.devicePixelRatio );
-            
-            element.append(renderer.domElement);
             
             // cast shadows
             renderer.shadowMap.enabled = this.showShadow;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            this.renderer = renderer;
+            element.append(renderer.domElement);
 
 
             // Action!
             var mouseEvtContainer = $('#com-chilipeppr-widget-3dviewer-renderArea');
             console.log(mouseEvtContainer);
-
-            controls.addEventListener( 'start', this.animNoSleep.bind(this));
-            controls.addEventListener( 'end', this.animAllowSleep.bind(this));
+            
+            // TODO: wakeAnimate change
+            /*
+            
             
             console.log("this wantAnimate:", this);
             
-            this.wantAnimate = true;
             this.wakeAnimate();
-
-            // Fix coordinates up if window is resized.
+            */
+            
             var that = this;
+            
+            
+            controls.addEventListener('start', function() {
+                that.moveAnimate = true;
+                that.animate();
+            });
+            
+            controls.addEventListener('end', function() {
+                that.animate();
+                that.moveAnimate = false;
+            });
+            
+            // our very first animate call
+            this.animate();
+            
+            // Fix coordinates up if window is resized.
             $(window).on('resize', function () {
                 // TODO: explore a way to correctly callback, rather than duplicate code.
-                renderer.setSize(element.width(), element.height());
+                that.renderer.setSize(element.width(), element.height());
             
-                camera.aspect = element.width() / element.height();
-                camera.updateProjectionMatrix();
+                that.camera.aspect = element.width() / element.height();
+                that.camera.updateProjectionMatrix();
             
-                controls.screen.width = window.innerWidth;
-                controls.screen.height = window.innerHeight;
-            
-                this.wakeAnimate();
+                that.controls.screen.width = window.innerWidth;
+                that.controls.screen.height = window.innerHeight;
+                
+                // TODO: wakeAnimate change
+                that.animate();
             });
 
             return scene;
         },
         resize: function() {
-            renderer.setSize(element.width(), element.height());
+            this.renderer.setSize(this.element.width(), this.element.height());
             
-            camera.aspect = element.width() / element.height();
-            camera.updateProjectionMatrix();
+            this.camera.aspect = this.element.width() / this.element.height();
+            this.camera.updateProjectionMatrix();
             
-            controls.screen.width = window.innerWidth;
-            controls.screen.height = window.innerHeight;
+            this.controls.screen.width = window.innerWidth;
+            this.controls.screen.height = window.innerHeight;
             
-            this.wakeAnimate();
+            // TODO: wakeAnimate change
+            this.animate();
         },
         
-        // TODO: review all fps/animation code
-        fpsCounterStart: function() {
-            
-            if (this.fpsEl == null) {
-                // pull dom el and cache so the dom updates are efficient
-                this.fpsEl = $('#com-chilipeppr-widget-3dviewer .frames-per-sec');
-            }
-
-            // if 3d viewer disabled, exit
-            if (this.animEnable == false) {
-                this.fpsEl.html('<span class="alert-danger" style="font-size:12px;">Manually Disabled. Go to cog wheel icon to choose a frame rate to re-enable.</span>');
-                return;
-            }
-            
-            // update fps each second
-            if (this.fpsCounterInterval == null) {
-                // start fps counting
-                this.renderFrameCtr = 0;
-                console.log("starting fps counting");
-                this.fpsCounterInterval = setInterval(this.fpsCounterOnInterval.bind(this), 1000);
-            }
-        },
-        fpsCounterOnInterval: function() {
-            this.fpsEl.html(this.renderFrameCtr + "&nbsp;fps");
-            this.renderFrameCtr = 0;
-        },
-        fpsCounterEnd: function() {
-            console.log("stopping fps counting");
-            clearInterval(this.fpsCounterInterval);
-            this.fpsCounterInterval = null;
-            console.log("checking if anim is disabled. this.animEnable:", this.animEnable);
-            if (this.animEnable == false) {
-                this.fpsEl.html('<div class="alert-danger" style="font-size:12px;line-height: 12px;padding: 6px;">Manually Disabled. Go to cog wheel icon to choose a frame rate to re-enable.</div>');
-            } else {
-                // set fps to just a dash
-                this.fpsEl.html("-&nbsp;fps");
-            }
-        },
-        setFrameRate: function(rate) {
-            this.fpsRate = rate;
-            
-            localStorage.setItem ('fpsRate', this.fpsRate);
-            console.log ("Set fpsRate in storage:  ", this.fpsRate);
-            
-            // see if disabled
-            if (rate == 0) {
-                this.animateDisabled();
-            } else {
-                this.animateEnabled();
-            }
-            
-            // rate is frames per second
-            if (rate == 5) this.frameRateDelayMs = 200;
-            if (rate == 10) this.frameRateDelayMs = 100;
-            if (rate == 15) this.frameRateDelayMs = 70;
-            if (rate == 30) this.frameRateDelayMs = 32;
-            if (rate == 60) this.frameRateDelayMs = 0;
-        },
-        animateDisabled: function() {
-            console.log("disabling animation");
-            this.animEnable = false;
-            this.fpsEl.html('<span class="alert-danger">Disabled</span>');
-        },
-        animateEnabled: function() {
-            console.log("enabling animation");
-            this.animEnable = true;
-        },
         animate: function() {
-            // if 3d viewer disabled, exit
-            if (this.animEnable == false) {
-                console.log("animate(). this.animEnable false, so exiting.");
-                return;
+            var that = this;
+            
+            // TODO: Implement dynamic scaling for animationLatencyDelay based on assessed load 
+            
+            if (this.fpsCalculationTimer == null) {
+                // calculate the actual fps every 2 seconds
+                this.fpsCalculationTimer = setInterval(function() {
+                    var fps = (that.renderFrameCount / 2);
+                    that.renderFrameCount = 0;
+                    $('.frames-per-sec').html(fps + "&nbsp;fps");
+                }, 2000);
             }
             
-            TWEEN.update();
-            if (this.wantAnimate) {
-                
-                // see if we're adding delay to slow frame rate
-                if (this.frameRateDelayMs > 0) {
-                    var that = this;
-                    setTimeout(function() {
-                        requestAnimationFrame(that.animate.bind(that));
-                    }, this.frameRateDelayMs);
-                } else {
-                    requestAnimationFrame(this.animate.bind(this));
-                }
+            if (this.moveAnimate) {
+                TWEEN.update();
+                requestAnimationFrame(that.animate.bind(this));
+            } else if ((this.tweenAnimate || this.inspectAnimate) && this.animationLatencyTimer == null) {
+                this.animationLatencyTimer = setTimeout(function() {
+                    TWEEN.update();
+                    requestAnimationFrame(that.animate.bind(that));
+                    that.animationLatencyTimer = null;
+                }, this.animationLatencyDelay);
             }
-            
+        
             this.controls.update();
             this.renderer.render(this.scene, this.camera);
-            this.renderFrameCtr++;
+            this.renderFrameCount++;
         },
-        wakeAnimate: function(evt) {
-            // if 3d viewer disabled, exit
-            if (this.animEnable == false) {
-                return;
-            }
-            
-            this.wantAnimate = true;
-            this.fpsCounterStart();
-            
-            if (!this.mytimeout) {
-                this.mytimeout = setTimeout(this.sleepAnimate.bind(this), 10000);
-                //console.log("wakeAnimate");
-                requestAnimationFrame(this.animate.bind(this));
-            }
-        },
-        sleepAnimate: function() {
-            this.mytimeout = null;
-            if (this.isNoSleepMode) {
-                // skip sleeping the anim
-                console.log("Being asked to sleep anim, but in NoSleepMode");
-            } else {
-                this.wantAnimate = false;
-                this.fpsCounterEnd();
-                console.log("slept animate");
-            }
-        },
-        cancelSleep: function() {
-            clearTimeout(this.mytimeout);
-        },
-        animNoSleep: function() {
-            this.isNoSleepMode = true;
-            this.wakeAnimate();
-        },
-        animAllowSleep: function() {
-            // even if we're being asked to allow sleep
-            // but the tween is playing, don't allow it
-            if (this.tweenIsPlaying) return;
-            
-            // if we get here, then allow sleep
-            this.isNoSleepMode = false;
-            if (!this.mytimeout) this.mytimeout = setTimeout(this.sleepAnimate.bind(this), 5000);
-        },
-        
         
         
         /**
