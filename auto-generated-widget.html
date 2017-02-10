@@ -640,8 +640,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             mouse.y = - ( ( event.clientY - this.domElement.offset().top ) / this.domElement.height() ) * 2 + 1;
             
             // dialog position
-            var x = event.clientX;
-            var y = event.clientY;
+            var x = event.clientX - this.domElement.offset().left;
+            var y = event.clientY - this.domElement.offset().top;
+            
             x += 30; // slide right to clear mouse
             y += -140;
             
