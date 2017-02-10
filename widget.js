@@ -537,8 +537,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var x = event.clientX - this.domElement.offset().left;
             var y = event.clientY - this.domElement.offset().top;
             
-            x += 30; // slide right to clear mouse
-            y += -140;
+            x += 50; // slide right to clear mouse
+            y += -100;
             
             var that = this;
             
