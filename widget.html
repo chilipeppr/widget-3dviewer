@@ -12,7 +12,7 @@
     <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
 
     <!-- Customized version of require.js for ChiliPeppr. Please see require.js docs for how
-    ChiliPeppr's dependency system works as it's based on require.js. -->
+    ChiliPeppr's dependency system works as it's based on require.js. -->        
     <script type='text/javascript' src="//i2dcui.appspot.com/js/require.js"></script>
 
     <!-- widget.css DON'T REMOVE -->
@@ -63,18 +63,9 @@
                         <button type="button" class="btn btn-xs btn-default dropdown-toggle" data-toggle="dropdown"> <span class="glyphicon glyphicon-cog"></span> <span class="caret" style="font-size:10px;margin-left: -2px;xmargin-right: -4px"></span></button>
                         <ul id="com-chilipeppr-widget-3dviewer-settings" class="dropdown-menu xdropdown-menu-right" role="menu">
                             <li role="presentation" class="dropdown-header">Options</li>
-                            <li><a class="com-chilipeppr-widget-3dviewer-settings-shadows" href="javascript:">Toggle Toolhead Shadow On/Off</a></li>
-                            <li role="presentation" class="divider"></li>
-                            <li role="presentation" class="dropdown-header">Frame Rate of Rendering</li>
-                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-5" href="javascript:">5 fps (Least CPU Usage)</a></li>
-                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-10" href="javascript:">10 fps</a></li>
-                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-15" href="javascript:">15 fps</a></li>
-                            <li><a class="alert-info com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-30" href="javascript:">30 fps (Default)</a></li>
-                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-60" href="javascript:">60 fps (Most CPU Usage)</a></li>
-                            <li role="presentation" class="divider"></li>
-                            <li role="presentation" class="dropdown-header">For Super Slow Machines</li>
-                            <li><a class="com-chilipeppr-widget-3dviewer-settings-fr com-chilipeppr-widget-3dviewer-settings-fr-0" href="javascript:">Disable 3D Viewer (No CPU Usage)</a></li>
-
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-aa" href="javascript:">Anti Aliasing</a></li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-shadows" href="javascript:">Toolhead Shadow</a></li>
+                            <li><a class="com-chilipeppr-widget-3dviewer-settings-animation" href="javascript:">Smooth Animation</a></li>                            
                         </ul>
                     </div>
                 </div>
@@ -97,7 +88,7 @@
                 </div>
                 <div class="btn-group" style="position:relative;font-size:9px;line-height:22px;">
                     <div style="position:absolute;top:-1px;left:28px;border:0px solid red;line-height:10px;" class="com-chilipeppr-widget-3dviewer-units-indicator">-</div>
-                    <div style="position:absolute;top:5px;left:28px;border:0px solid red;" class="frames-per-sec">32&nbsp;fps</div>
+                    <div style="position:absolute;top:5px;left:28px;border:0px solid red;" class="frames-per-sec"></div>
                 </div>
             </div>
             <span class="panel-title" style="padding-right:10px;" data-toggle="popover" data-trigger="hover" data-placement="auto" data-content="">3D&nbsp;Viewer</span>
@@ -164,7 +155,24 @@
             </div>
         </div>
     </div>
-
+    
+    <!-- Modal for Out of Local Storage -->
+    <div id="com-chilipeppr-widget-3dviewer-aa-notice" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="aa-notice-modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="myModalLabel">Page Reload Required</h4>
+                </div>
+                <div class="modal-body">
+                    <p>You need to reload the page for the anti-alias change to take effect.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    
     <!-- Modal for Out of Local Storage -->
     <div id="com-chilipeppr-widget-3dviewer-outofspace" class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
         <div class="modal-dialog">
