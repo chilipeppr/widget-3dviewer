@@ -126,9 +126,11 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
 } /*end_test*/ );
 
 // Bring THREE in to global scope
-define('Three', ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.js'], function ( THREE ) {
-  window.THREE = THREE;
-  return THREE;
+cpdefine('Three', ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.js'], function ( THREE ) {
+    if (typeof window !== 'undefined') {
+        window.THREE = THREE;
+        return THREE;
+    }
 });
 
 cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 'ThreeTrackballControls', 'ThreeTween', 'ThreeProjector'], function () {
@@ -315,7 +317,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // setup toolbar buttons and menu state
             this.btnSetup();
             this.setupCogMenu();
-            this.setupFpsMenu();
             this.setCogMenuState();
             this.setupGridSizeMenu();
             
@@ -972,6 +973,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.setCogMenuState();
             
             this.drawToolhead();
+            
+            this.animate();
         },
         
         onToggleAnimationClick: function(evt, param) {
@@ -984,28 +987,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.setCogMenuState();
         },
         
-        setupFpsMenu: function() {
-            $('.com-chilipeppr-widget-3dviewer-settings-fr-5').click(5, this.onFpsClick.bind(this));
-            $('.com-chilipeppr-widget-3dviewer-settings-fr-10').click(10, this.onFpsClick.bind(this));
-            $('.com-chilipeppr-widget-3dviewer-settings-fr-15').click(15, this.onFpsClick.bind(this));
-            $('.com-chilipeppr-widget-3dviewer-settings-fr-30').click(30, this.onFpsClick.bind(this));
-            $('.com-chilipeppr-widget-3dviewer-settings-fr-60').click(60, this.onFpsClick.bind(this));
-            $('.com-chilipeppr-widget-3dviewer-settings-fr-0').click(0, this.onFpsClick.bind(this));
-            $('.com-chilipeppr-widget-3dviewer-settings-fr--5').click(-5, this.onFpsClick.bind(this));
-        },
-        onFpsClick: function(evt, param) {
-            console.log("got onFpsClick. evt:", evt, "param:", param);
-            var fr = evt.data;
-            this.setFrameRate(fr);
-            
-            this.setCogMenuState();
-            
-            // TODO: wakeAnimate change
-            this.animate();
-        },
         
-        
-
         setupGridSizeMenu: function() {
             $('.com-chilipeppr-widget-3dviewer-gridsizing-1x').click(1, this.onGridSizeClick.bind(this));
             $('.com-chilipeppr-widget-3dviewer-gridsizing-2x').click(2, this.onGridSizeClick.bind(this));
@@ -1025,6 +1007,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             $('.com-chilipeppr-widget-3dviewer-gridsizing-' + this.gridSize + 'x').addClass("alert-info");
             
+            this.animate();
         },
         
         
@@ -2345,18 +2328,28 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     var fps = (that.renderFrameCount / 2);
                     that.renderFrameCount = 0;
                     $('.frames-per-sec').html(fps + "&nbsp;fps");
+                    
+                    // scale our animation delay based on actual fps achieved
+                    if (fps > 30) {
+                        this.animationLatencyDelay = this.animationLatencyDelayDefault;
+                    } else if (fps > 20) {
+                        this.animationLatencyDelay = 70;
+                    } else if (fps > 10) {
+                        this.animationLatencyDelay = 150;
+                    } else {
+                        this.animationLatencyDelay = 300;
+                    }
                 }, 2000);
             }
             
-            if (this.moveAnimate) {
-                TWEEN.update();
-                requestAnimationFrame(that.animate.bind(this));
-            } else if ((this.tweenAnimate || this.inspectAnimate) && this.animationLatencyTimer == null) {
+            if ((this.moveAnimate || this.tweenAnimate || this.inspectAnimate) && this.animationLatencyTimer == null) {
+                var animationDelay = (!this.moveAnimate && this.disableAnimation) ? 2000 : this.animationLatencyDelay;
+                
                 this.animationLatencyTimer = setTimeout(function() {
                     TWEEN.update();
                     requestAnimationFrame(that.animate.bind(that));
                     that.animationLatencyTimer = null;
-                }, this.animationLatencyDelay);
+                }, animationDelay);
             }
         
             this.controls.update();
