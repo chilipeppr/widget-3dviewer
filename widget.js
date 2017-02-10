@@ -254,7 +254,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.initOptions = initOptions;
             
             var that = this;
-
+            
+            // download the font we'll use to render text
+            this.downloadFont();
+            
             // Drop files from desktop onto main page to import them.
             // We also can subscribe to the main chilipeppr drag/drop
             // pubsub to get drop events from a parent, rather than doing
@@ -307,11 +310,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             } else {
                 that.openGCodeFromPath(lastLoaded || 'http://www.chilipeppr.com/3d/chilipepprlogo.nc');
             }
-            
-            
-            
-            // download the font we'll use to render text
-            this.downloadFont();
             
             
             // setup toolbar buttons and menu state
