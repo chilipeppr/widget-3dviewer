@@ -15,6 +15,10 @@
 
     <style type='text/css'>
 /* CSS for ChiliPeppr Widget */
+#com-chilipeppr-widget-3dviewer {
+    width: 100%;
+}
+
 #com-chilipeppr-widget-3dviewer .panel-heading {
     z-index:1;
     position:relative;
@@ -31,20 +35,18 @@
 }
 
 #com-chilipeppr-widget-3dviewer-body {
-    /* height: 350px; */
+    height:85vh;
     padding:0;
-    margin:0;
+    margin: auto;
     position: relative;
     border:0px solid red;
-    background-color: blue;
 }
 #com-chilipeppr-widget-3dviewer-renderArea {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    top: 0;
-    background-color: #000000;
+    position: relative;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+    background-color: #eeeeee;
     /* z-index:0; */
 }
 #com-chilipeppr-widget-3dviewer .disabled .glyphicon {
@@ -3474,8 +3476,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 <body>
 
     <div id="com-chilipeppr-widget-3dviewer" class="panel panel-default" style="float:left;">
-        <div class="panel-heading well">
-            <div class="btn-toolbar pull-right" role="toolbar">
+        <div class="panel-heading">
+            <div class="btn-toolbar" role="toolbar">                
                 <div class="btn-group" data-style="padding-right:6px;">
                     <button type="button" class="btn btn-xs btn-default com-chilipeppr-widget-3d-menu-viewextents" data-container="body" data-toggle="popover" data-placement="auto" data-content="View extents of GCode object" data-trigger="hover" data-delay="800"> <span class="glyphicon glyphicon-eye-open"></span>
                     </button>
@@ -3524,12 +3526,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         <li><a class="com-chilipeppr-widget-3d-menu-samplerun" href="javascript:">Play Sample Run</a></li>
                     </ul>
                 </div>
-                <div class="btn-group" style="position:relative;font-size:9px;line-height:22px;">
-                    <div style="position:absolute;top:-1px;left:28px;border:0px solid red;line-height:10px;" class="com-chilipeppr-widget-3dviewer-units-indicator">-</div>
-                    <div style="position:absolute;top:5px;left:28px;border:0px solid red;" class="frames-per-sec"></div>
+                <div class="btn-group" style="position:relative;font-size:9px;line-height:16px;margin-top:-5px;margin-left:30px">
+                    <div class="com-chilipeppr-widget-3dviewer-units-indicator">-</div>
+                    <div class="frames-per-sec"></div>
                 </div>
             </div>
-            <span class="panel-title" style="padding-right:10px;" data-toggle="popover" data-trigger="hover" data-placement="auto" data-content="">3D&nbsp;Viewer</span>
             <div style="xposition:absolute;bottom:-18px;left:0px;border:0px solid red;line-height:10px;" class="com-chilipeppr-widget-3dviewer-panzoom-indicator">Pan: Right-Click Drag, Zoom: Mousewheel/Touchpad Scroll, Orbit: Mouse/Touch Drag</div>
         </div>
         <div id="com-chilipeppr-widget-3dviewer-body" class="panel-body">
@@ -3559,9 +3560,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             <td class="inspect-gcode"></td>
                         </tr>
                         <!-- <tr class="">
-                        <td class="">Start</td>
-                        <td class="inspect-start"></td>
-                    </tr> -->
+                            <td class="">Start</td>
+                            <td class="inspect-start"></td>
+                        </tr> -->
                         <tr class="">
                             <td class="">End Pos</td>
                             <td class="inspect-end"></td>
@@ -3584,12 +3585,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         </tr>
                     </tbody>
                 </table>
-
             </div>
             <div id="warningArea">
                 <div class="alert alert-warning alert-dismissable hidden">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>G2/G3 arcs only rendered as straight lines. They are yellow to show where actual positioning in your CNC will differ from 3D rendering. If anyone wants to fork and fix arcs, feel free.</div>
-
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>G2/G3 arcs only rendered as straight lines. They are yellow to show where actual positioning in your CNC will differ from 3D rendering. If anyone wants to fork and fix arcs, feel free.
+                </div>
             </div>
         </div>
     </div>
@@ -3631,15 +3631,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 </div>
             </div>
         </div>
-        <script id="vertexShader" type="x-shader/x-vertex">
-            uniform vec3 viewVector; uniform float c; uniform float p; varying float intensity; void main() { vec3 vNormal = normalize( normalMatrix * normal ); vec3 vNormel = normalize( normalMatrix * viewVector ); intensity = pow( c - dot(vNormal, vNormel), p );
-            gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 ); }
-        </script>
 
-        <!-- fragment shader a.k.a. pixel shader -->
-        <script id="fragmentShader" type="x-shader/x-vertex">
-            uniform vec3 glowColor; varying float intensity; void main() { vec3 glow = glowColor * intensity; gl_FragColor = vec4( glow, 1.0 ); }
-        </script>
     </div>
 
 </body>
