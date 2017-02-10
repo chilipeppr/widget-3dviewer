@@ -1706,6 +1706,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 console.log("no previous decorate extents.");
             }
             
+            if (!this.textFont) {
+                console.log('unable to render extents without a font');
+                return;
+            }
+            
             if (!this.object) {
                 return;
             }
