@@ -4,7 +4,7 @@
 // ChiliPeppr Widget/Element Javascript
 requirejs.config({
     paths: {
-        Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three',
+        Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r85/three',
         
         ThreeTrackballControls: 'https://cdn.rawgit.com/mrdoob/three.js/dev/examples/js/controls/TrackballControls',
         ThreeTween: 'https://cdn.rawgit.com/tweenjs/tween.js/master/src/Tween',
@@ -651,9 +651,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // draw a cube at each end point
                     var v1 = objGeometry.vertices[0];
                     var v2 = objGeometry.vertices[objGeometry.vertices.length - 1];
-                
-                    var uv1 = v1.clone();
-                    var uv2 = v2.clone();
+                    
                     var length = v1.distanceTo(v2);
                     var dir = v2.clone().sub(v1).normalize();
                     var ray = new THREE.Ray(v1, dir);
@@ -1777,7 +1775,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             var color = '#0d0d0d';            
             var material = new THREE.LineDashedMaterial({ 
-                vertexColors: false, color: color,
+                vertexColors: false, 
+                color: color,
                 dashSize: this.getUnitVal(1), gapSize: this.getUnitVal(1), linewidth: this.lineWidth,
                 transparent: true,
                 opacity: 0.3,
@@ -2977,7 +2976,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     var geometry = new THREE.Geometry();
                     geometry.vertices.push(
                         new THREE.Vector3( p1.x, p1.y, p1.z ),
-                        new THREE.Vector3( p2.x, p2.y, p2.z )
+                        new THREE.Vector3( p2.x, p2.y, p2.z ),
+                        new THREE.Vector3( p2.x, p2.y, p2.z ) // HAX, to fix createGlow error with straight lines
                     );
                     
                     gcodeObj = new THREE.Line( this.convertLineGeometryToBufferGeometry(geometry, new THREE.Color(color)), material );
