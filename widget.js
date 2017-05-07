@@ -1473,8 +1473,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     shadow.position.setX(posZ * -1); // make x be z offset
                 }
             }
-            // TODO: animAllowSleep
-            //this.animAllowSleep();
+            
+            this.moveAnimate = true;
+            this.animate();
+            this.moveAnimate = false;
         },
         gotoLine: function(data) {
             // this method is sort of like playNextTween, but we are jumping to a specific
