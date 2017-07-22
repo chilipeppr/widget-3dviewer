@@ -3667,8 +3667,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var ijkabsolute = false;  // For Mach3 Arc IJK Absolute mode
             
             this.ijkposition = function (v1, v2) {
-                // return ijkabsolute ? v2 : v1 + v2;
-                return v1 + v2;
+                return ijkabsolute ? v2 : v1 + v2;
             }
 
             this.addFakeSegment = function(args) {
