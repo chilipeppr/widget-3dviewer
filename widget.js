@@ -2871,6 +2871,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     if (tokens) {
                         var cmd = tokens[0];
                         cmd = cmd.toUpperCase();
+                        // Change '.' in command to '_', e.g. G90.1 -> G90_1
+                        cmd = cmd.replace(/\./, "_");
                         // check if a g or m cmd was included in gcode line
                         // you are allowed to just specify coords on a line
                         // and it should be assumed that the last specified gcode
@@ -3370,9 +3372,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             };
                         else*/
                         var pArc = {
-                            x: p2.arci ? p1.x + p2.arci : p1.x,
-                            y: p2.arcj ? p1.y + p2.arcj : p1.y,
-                            z: p2.arck ? p1.z + p2.arck : p1.z,
+                            x: p2.arci ? cofg.ijkposition(p1.x, p2.arci) : p1.x,
+                            y: p2.arcj ? cofg.ijkposition(p1.y, p2.arcj) : p1.y,
+                            z: p2.arck ? cofg.ijkposition(p1.z, p2.arck) : p1.z,
                         };
                         //console.log("new pArc:", pArc);
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
@@ -3557,6 +3559,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.absolute = function (v1, v2) {
                 return relative ? v1 + v2 : v2;
             }
+            
+            var ijkabsolute = false;  // For Mach3 Arc IJK Absolute mode
+            
+            this.ijkposition = function (v1, v2) {
+                return ijkabsolute ? v2 : v1 + v2;
+            }
 
             this.addFakeSegment = function(args) {
                 //line.args = args;
@@ -3714,6 +3722,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     cofg.addFakeSegment(args);
                 },
 
+                G90_1: function (args) {
+                    // G90.1: Set to Arc Absolute IJK Positioning
+                    // Example: G90.1
+                    // From now on, arc centers are specified directly by
+                    // the IJK parameters, e.g. center_x = I_value
+                    // This is Mach3-specific
+
+
+                    ijkabsolute = true;
+                    cofg.addFakeSegment(args);
+                },
+
                 G91: function (args) {
                     // G91: Set to Relative Positioning
                     // Example: G91
@@ -3721,6 +3741,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
                     // TODO!
                     relative = true;
+                    cofg.addFakeSegment(args);
+                },
+
+                G91_1: function (args) {
+                    // G91.1: Set to Arc Relative IJK Positioning
+                    // Example: G91.1
+                    // From now on, arc centers are relative to the starting
+                    // coordinate, e.g. center_x = this_x + I_value
+                    // This is the default, and the only possibility for most
+                    // controllers other than Mach3
+
+                    ijkabsolute = true;
                     cofg.addFakeSegment(args);
                 },
 

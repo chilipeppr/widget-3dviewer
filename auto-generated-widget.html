@@ -252,10 +252,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         id: 'com-chilipeppr-widget-3dviewer',
         name: "Widget / 3D GCode Viewer",
         desc: "Visualize your GCode in 3D by simulating your GCode run or seeing where your run is at in 3D while your CNC operation is in action.",
-        url: "http://raw.githubusercontent.com/chilipeppr/widget-3dviewer/master/auto-generated-widget.html",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
-        fiddleurl: "http://ide.c9.io/chilipeppr/widget-3dviewer", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
-        githuburl: "http://github.com/chilipeppr/widget-3dviewer", // The backing github repo
-        testurl: "http://widget-3dviewer-chilipeppr.c9users.io/widget.html",   // The standalone working widget so can view it working by itself
+        url: "http://raw.githubusercontent.com/MitchBradley/widget-3dviewer/master/auto-generated-widget.html",       // The final URL of the working widget as a single HTML file with CSS and Javascript inlined. You can let runme.js auto fill this if you are using Cloud9.
+        fiddleurl: "http://ide.c9.io/mitchbradley/widget_3dviewer_ijkabsolute", // The edit URL. This can be auto-filled by runme.js in Cloud9 if you'd like, or just define it on your own to help people know where they can edit/fork your widget
+        githuburl: "http://github.com/MitchBradley/widget-3dviewer", // The backing github repo
+        testurl: "http://widget_3dviewer_ijkabsolute-mitchbradley.c9users.io/widget.html",   // The standalone working widget so can view it working by itself
         publish: {
             '/recv3dObject' : "When you send a /request3dObject you will receive a signal back of /recv3dObject. This signal has a payload of the THREE.js user object being shown in the 3D viewer.",
             '/recvUnits' : 'When you send a /requestUnits you will receive back this signal with a payload of "mm" or "inch" as a string. Please also see /unitsChanged in case you want to know whenever units are changed from a file open event. You can request what units the Gcode are in from the 3D Viewer. Since the 3D Viewer parses Gcode, it can determine the units. The 3D Viewer is mostly unit agnostic, however to draw the toolhead, grid, and extents labels it does need to know the units to draw the decorations in a somewhat appropriate size.',
@@ -2975,6 +2975,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     if (tokens) {
                         var cmd = tokens[0];
                         cmd = cmd.toUpperCase();
+                        // Change '.' in command to '_', e.g. G90.1 -> G90_1
+                        cmd = cmd.replace(/\./, "_");
                         // check if a g or m cmd was included in gcode line
                         // you are allowed to just specify coords on a line
                         // and it should be assumed that the last specified gcode
@@ -3474,9 +3476,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             };
                         else*/
                         var pArc = {
-                            x: p2.arci ? p1.x + p2.arci : p1.x,
-                            y: p2.arcj ? p1.y + p2.arcj : p1.y,
-                            z: p2.arck ? p1.z + p2.arck : p1.z,
+                            x: p2.arci ? cofg.ijkposition(p1.x, p2.arci) : p1.x,
+                            y: p2.arcj ? cofg.ijkposition(p1.y, p2.arcj) : p1.y,
+                            z: p2.arck ? cofg.ijkposition(p1.z, p2.arck) : p1.z,
                         };
                         //console.log("new pArc:", pArc);
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
@@ -3661,6 +3663,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.absolute = function (v1, v2) {
                 return relative ? v1 + v2 : v2;
             }
+            
+            var ijkabsolute = false;  // For Mach3 Arc IJK Absolute mode
+            
+            this.ijkposition = function (v1, v2) {
+                return ijkabsolute ? v2 : v1 + v2;
+            }
 
             this.addFakeSegment = function(args) {
                 //line.args = args;
@@ -3818,6 +3826,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     cofg.addFakeSegment(args);
                 },
 
+                G90_1: function (args) {
+                    // G90.1: Set to Arc Absolute IJK Positioning
+                    // Example: G90.1
+                    // From now on, arc centers are specified directly by
+                    // the IJK parameters, e.g. center_x = I_value
+                    // This is Mach3-specific
+
+
+                    ijkabsolute = true;
+                    cofg.addFakeSegment(args);
+                },
+
                 G91: function (args) {
                     // G91: Set to Relative Positioning
                     // Example: G91
@@ -3825,6 +3845,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
                     // TODO!
                     relative = true;
+                    cofg.addFakeSegment(args);
+                },
+
+                G91_1: function (args) {
+                    // G91.1: Set to Arc Relative IJK Positioning
+                    // Example: G91.1
+                    // From now on, arc centers are relative to the starting
+                    // coordinate, e.g. center_x = this_x + I_value
+                    // This is the default, and the only possibility for most
+                    // controllers other than Mach3
+
+                    ijkabsolute = true;
                     cofg.addFakeSegment(args);
                 },
 
