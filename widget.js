@@ -3752,7 +3752,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // This is the default, and the only possibility for most
                     // controllers other than Mach3
 
-                    ijkabsolute = true;
+                    ijkabsolute = false;
                     cofg.addFakeSegment(args);
                 },
 
