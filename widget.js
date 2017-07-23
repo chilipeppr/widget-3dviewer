@@ -3372,16 +3372,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             };
                         else*/
                         var pArc = {
-                        //    x: p2.arci == null ? p1.x : cofg.ijkposition(p1.x, p2.arci),
-                        //    y: p2.arcj == null ? p1.y : cofg.ijkposition(p1.y, p2.arcj),
-                        //    z: p2.arck == null ? p1.z : cofg.ijkposition(p1.z, p2.arck),
-                        x: p2.arci,
-                        y: p2.arcj,
-                        z: p2.arck,
+                            x: p2.arci,
+                            y: p2.arcj,
+                            z: p2.arck,
                         };
                         //console.log("new pArc:", pArc);
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
-                        console.log("vpArc:", vpArc);
+                        //console.log("vpArc:", vpArc);
                     }
                     
                     var threeObjArc = this.drawArcFrom2PtsAndCenter(vp1, vp2, vpArc, args);
@@ -3646,13 +3643,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-                        //arci: args.i !== undefined ? args.i : null,
-                        //arcj: args.j !== undefined ? args.j : null,
-                        //arck: args.k !== undefined ? args.k : null,
                         arci: args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : lastLine.x,
                         arcj: args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : lastLine.y,
                         arck: args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : lastLine.z,
-                        arcr: args.r !== undefined ? args.r : null,
+                        arcr: args.r ? args.r : null,
                     };
                    
                     //console.log("G2 newLine:", newLine);
