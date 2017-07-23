@@ -2940,7 +2940,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         } else {
                             //console.log("this was a comment, so didn't save lastArgs");
                         }
-                        //console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
+                        console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
                         if (handler) {
                             
                             // do extra check here for units. units are
