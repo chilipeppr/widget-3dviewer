@@ -2815,8 +2815,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
          * Special handler:
          *   'default': Called if no other handler matches.
          */
-        GCodeParser: function (handlers) {
+        GCodeParser: function (handlers, modecmdhandlers) {
             this.handlers = handlers || {};
+            this.modecmdhandlers = modecmdhandlers || {};
             
             this.lastArgs = {cmd: null};
             this.lastFeedrate = null;
@@ -2868,131 +2869,113 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     text = text.replace(/(;|\().*$/, ""); // ; or () trailing
                     //text = text.replace(/\(.*$/, ""); // () trailing
                     
-                    var tokens = text.split(/\s+/);
-                    //console.log("tokens:", tokens);
-                    if (tokens) {
-                        var cmd = tokens[0];
-                        cmd = cmd.toUpperCase();
-                        // Change '.' in command to '_', e.g. G90.1 -> G90_1
-                        //cmd = cmd.replace(/\./, "_");
-                        // check if a g or m cmd was included in gcode line
-                        // you are allowed to just specify coords on a line
-                        // and it should be assumed that the last specified gcode
-                        // cmd is what's assumed
-                        isComment = false;
-                        if (!cmd.match(/^(G|M|T)/i)) {
-                            // if comment, drop it
-                            /*
-                            if (cmd.match(/(;|\(|<)/)) {
-                                // is comment. do nothing.
-                                isComment = true;
-                                text = origtext;
-                                //console.log("got comment:", cmd);
-                            } else {
-                            */
+        		    var tokens = [];
 
-                                //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
-                                // we need to use the last gcode cmd
-                                cmd = this.lastArgs.cmd;
-                                //console.log("using last cmd:", cmd);
-                                tokens.unshift(cmd); // put at spot 0 in array
-                                //console.log("tokens:", tokens);
-                            //}
-                        } else {
-                            
-                            // we have a normal cmd as opposed to just an xyz pos where
-                            // it assumes you should use the last cmd
-                            // however, need to remove inline comments (TODO. it seems parser works fine for now)
-                            
-                        }
-                        var args = {
-                            'cmd': cmd,
+        		    // Execute any non-motion commands, possibly many per line
+        		    // We do not create fake segments, as only one segment will
+        		    // be create for this line, later.
+        		    text.split(/\s+/).forEach(function (token) {
+        			var modehandler = modecmdhandlers[token.toUpperCase()];
+            			if (modehandler) {
+            			    modehandler();
+            			} else {
+            			    tokens.push(token);
+            			}
+        		    });
+
+                    //console.log("tokens:", tokens);
+        		    // tokens contains what is left after handling the non-motion commands
+        		    if (tokens.length == 0) {
+            			// it was a comment or the line was empty after the non-motion commands
+            			// we still need to create a segment with xyz in p2
+            			// so that when we're being asked to /gotoline we have a position
+            			// for each gcode line, even comments. we just use the last real position
+            			// to give each gcode line (even a blank line) a spot to go to
+            			var args = {
+                            'cmd': 'empty or comment',
                             'text': text,
                             'origtext': origtext,
                             'indx': info,
-                            'isComment': isComment,
-                            'feedrate': null,
-                            'plane': undefined
-                        };
-                        
-                        //console.log("args:", args);
-                        if (tokens.length > 1  && !isComment) {
-                            tokens.splice(1).forEach(function (token) {
-                                //console.log("token:", token);
-                                if (token && token.length > 0) {
-                                    var key = token[0].toLowerCase();
-                                    var value = parseFloat(token.substring(1));
-                                    //console.log("value:", value, "key:", key);
-                                    //if (isNaN(value))
-                                    //    console.error("got NaN. val:", value, "key:", key, "tokens:", tokens);
-                                    args[key] = value;
-                                } else {
-                                    //console.log("couldn't parse token in foreach. weird:", token);
-                                }
-                            });
-                        }
-                        var handler = this.handlers[cmd] || this.handlers['default'];
+                            'isComment': isComment
+             			};
+            			var handler = this.handlers['default'];
+                		return handler(args, info, this);
+        			}
 
-                        // don't save if saw a comment
-                        if (!args.isComment) {
-                            this.lastArgs = args;
-                            //console.log("just saved lastArgs for next use:", this.lastArgs);
-                        } else {
-                            //console.log("this was a comment, so didn't save lastArgs");
-                        }
-                        console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
-                        if (handler) {
-                            
-                            // do extra check here for units. units are
-                            // specified via G20 or G21. We need to scan
-                            // each line to see if it's inside the line because
-                            // we were only catching it when it was the first cmd
-                            // of the line.
-                            if (args.text.match(/\bG20\b/i)) {
-                                console.log("SETTING UNITS TO INCHES from pre-parser!!!");
-                                this.isUnitsMm = false; // false means inches cuz default is mm
-                            } else if (args.text.match(/\bG21\b/i)) {
-                                console.log("SETTING UNITS TO MM!!! from pre-parser");
-                                this.isUnitsMm = true; // true means mm
-                            }
-                            
-                            // scan for feedrate
-                            if (args.text.match(/F([\d.]+)/i)) {
-                                // we have a new feedrate
-                                var feedrate = parseFloat(RegExp.$1);
-                                console.log("got feedrate on this line. feedrate:", feedrate, "args:", args);
-                                args.feedrate = feedrate;
-                                this.lastFeedrate = feedrate;
-                            } else {
-                                // use feedrate from prior lines
-                                args.feedrate = this.lastFeedrate;
-                                //if (args.feedrate 
-                            }
-                            
-                            //console.log("about to call handler. args:", args, "info:", info, "this:", this);
-                            
-                            return handler(args, info, this);
-                        } else {
-                            console.error("No handler for gcode command!!!");
-                        }
-                            
+		            // There is more to do after having handled the non-motion commands
+                    var cmd = tokens[0].toUpperCase();
+
+                    // check if a g or m cmd was included in gcode line
+                    // you are allowed to just specify coords on a line
+                    // and it should be assumed that the last specified gcode
+                    // cmd is what's assumed
+                    isComment = false;
+                    if (!cmd.match(/^(G|M|T)/i)) {
+			            //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
+                        // we need to use the last gcode cmd
+                        cmd = this.lastArgs.cmd;
+                        //console.log("using last cmd:", cmd);
+                        residue.unshift(cmd); // put at spot 0 in array
+                        //console.log("tokens:", tokens);
                     }
-                } else {
-                    // it was a comment or the line was empty
-                    // we still need to create a segment with xyz in p2
-                    // so that when we're being asked to /gotoline we have a position
-                    // for each gcode line, even comments. we just use the last real position
-                    // to give each gcode line (even a blank line) a spot to go to
                     var args = {
-                        'cmd': 'empty or comment',
+                        'cmd': cmd,
                         'text': text,
                         'origtext': origtext,
                         'indx': info,
-                        'isComment': isComment
+                        'isComment': isComment,
+                        'feedrate': null,
+                        'plane': undefined
                     };
-                    var handler = this.handlers['default'];
-                    return handler(args, info, this);
+                        
+                    //console.log("args:", args);
+                    if (tokens.length > 1  && !isComment) {
+                        tokens.splice(1).forEach(function (token) {
+                            //console.log("token:", token);
+                            if (token && token.length > 0) {
+                                var key = token[0].toLowerCase();
+                                var value = parseFloat(token.substring(1));
+                                //console.log("value:", value, "key:", key);
+                                //if (isNaN(value))
+                                //    console.error("got NaN. val:", value, "key:", key, "tokens:", tokens);
+                                args[key] = value;
+                            } else {
+                                //console.log("couldn't parse token in foreach. weird:", token);
+                            }
+                        });
+                    }
+
+                    // don't save if saw a comment
+                    if (!args.isComment) {
+                        this.lastArgs = args;
+                        //console.log("just saved lastArgs for next use:", this.lastArgs);
+                    } else {
+                        //console.log("this was a comment, so didn't save lastArgs");
+                    }
+                    console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
+                    var handler = this.handlers[cmd] || this.handlers['default'];
+                    if (handler) {
+                        // scan for feedrate
+                        if (args.text.match(/F([\d.]+)/i)) {
+                            // we have a new feedrate
+                            var feedrate = parseFloat(RegExp.$1);
+                            console.log("got feedrate on this line. feedrate:", feedrate, "args:", args);
+                            args.feedrate = feedrate;
+                            this.lastFeedrate = feedrate;
+                        } else {
+                            // use feedrate from prior lines
+                            args.feedrate = this.lastFeedrate;
+                            //if (args.feedrate 
+                        }
+                            
+                        //console.log("about to call handler. args:", args, "info:", info, "this:", this);
+                            
+                        return handler(args, info, this);
+                    } else {
+                        console.error("No handler for gcode command!!!");
+                    }
                 }
+
             }
 
             this.parse = function (gcode) {
@@ -3007,6 +2990,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         colorG0: 0x00ff00,
         colorG1: 0x0000ff,
         colorG2: 0x999900,
+        stuff: { a: 'b', b: 'c', },
         createObjectFromGCode: function (gcode, indxMax) {
             //debugger;
             // Credit goes to https://github.com/joewalnes/gcode-viewer
@@ -3669,93 +3653,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     gcp.handlers.G2(args, indx, gcp);
                 },
 
-                G17: function (args){
-                    console.log("SETTING XY PLANE");
-                    plane = "G17";
-                    cofg.addFakeSegment(args);
-                },
-
-                G18: function (args){
-                    console.log("SETTING XZ PLANE");
-                    plane = "G18";
-                    cofg.addFakeSegment(args);
-                },
-
-                G19: function (args){
-                    console.log("SETTING YZ PLANE");
-                    plane = "G19";
-                    cofg.addFakeSegment(args);
-                },
-
-                G20: function (args) {
-                    // G21: Set Units to Inches
-                    // We don't really have to do anything since 3d viewer is unit agnostic
-                    // However, we need to set a global property so the trinket decorations
-                    // like toolhead, axes, grid, and extent labels are scaled correctly
-                    // later on when they are drawn after the gcode is rendered
-                    console.log("SETTING UNITS TO INCHES!!!");
-                    cofg.isUnitsMm = false; // false means inches cuz default is mm
-                    cofg.addFakeSegment(args);
-
-                },
-
-                G21: function (args) {
-                    // G21: Set Units to Millimeters
-                    // Example: G21
-                    // Units from now on are in millimeters. (This is the RepRap default.)
-                    console.log("SETTING UNITS TO MM!!!");
-                    cofg.isUnitsMm = true; // true means mm
-                    cofg.addFakeSegment(args);
-
-                },
-
                 G73: function(args, indx, gcp) {
                     // peck drilling. just treat as g1
                     console.log("G73 gcp:", gcp);
                     gcp.handlers.G1(args);
-                },
-                G90: function (args) {
-                    // G90: Set to Absolute Positioning
-                    // Example: G90
-                    // All coordinates from now on are absolute relative to the
-                    // origin of the machine. (This is the RepRap default.)
-
-                    relative = false;
-                    cofg.addFakeSegment(args);
-                },
-
-                G90_1: function (args) {
-                    // G90.1: Set to Arc Absolute IJK Positioning
-                    // Example: G90.1
-                    // From now on, arc centers are specified directly by
-                    // the IJK parameters, e.g. center_x = I_value
-                    // This is Mach3-specific
-
-
-                    ijkrelative = false;
-                    cofg.addFakeSegment(args);
-                },
-
-                G91: function (args) {
-                    // G91: Set to Relative Positioning
-                    // Example: G91
-                    // All coordinates from now on are relative to the last position.
-
-                    // TODO!
-                    relative = true;
-                    cofg.addFakeSegment(args);
-                },
-
-                G91_1: function (args) {
-                    // G91.1: Set to Arc Relative IJK Positioning
-                    // Example: G91.1
-                    // From now on, arc centers are relative to the starting
-                    // coordinate, e.g. center_x = this_x + I_value
-                    // This is the default, and the only possibility for most
-                    // controllers other than Mach3
-
-                    ijkrelative = true;
-                    cofg.addFakeSegment(args);
                 },
 
                 G92: function (args) { // E0
@@ -3787,12 +3688,86 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 M30: function (args) {
                     cofg.addFakeSegment(args);
                 },
+
+                'default': function (args, info) {
+                    //if (!args.isComment)
+                    //    console.log('Unknown command:', args.cmd, args, info);
+                    cofg.addFakeSegment(args);
+                },
+            },
+            // Mode-setting non-motion commands, of which many may appear on one line
+            {
+                G17: function (){
+                    console.log("SETTING XY PLANE");
+                    this.plane = "G17";
+                },
+
+                G18: function (){
+                    console.log("SETTING XZ PLANE");
+                    this.plane = "G18";
+                },
+
+                G19: function (){
+                    console.log("SETTING YZ PLANE");
+                    this.plane = "G19";
+                },
+
+                G20: function () {
+                    // G21: Set Units to Inches
+                    // We don't really have to do anything since 3d viewer is unit agnostic
+                    // However, we need to set a global property so the trinket decorations
+                    // like toolhead, axes, grid, and extent labels are scaled correctly
+                    // later on when they are drawn after the gcode is rendered
+                    console.log("SETTING UNITS TO INCHES!!!");
+                    cofg.isUnitsMm = false; // false means inches cuz default is mm
+                },
+
+                G21: function () {
+                    // G21: Set Units to Millimeters
+                    // Example: G21
+                    // Units from now on are in millimeters. (This is the RepRap default.)
+                    console.log("SETTING UNITS TO MM!!!");
+                    cofg.isUnitsMm = true; // true means mm
+                },
+                G90: function () {
+                    // G90: Set to Absolute Positioning
+                    // Example: G90
+                    // All coordinates from now on are absolute relative to the
+                    // origin of the machine. (This is the RepRap default.)
+                    this.relative = false;
+                },
+
+                'G90.1': function (args) {
+                    // G90.1: Set to Arc Absolute IJK Positioning
+                    // Example: G90.1
+                    // From now on, arc centers are specified directly by
+                    // the IJK parameters, e.g. center_x = I_value
+                    // This is Mach3-specific
+                    this.ijkrelative = false;
+                },
+
+                G91: function (args) {
+                    // G91: Set to Relative Positioning
+                    // Example: G91
+                    // All coordinates from now on are relative to the last position.
+                    relative = true;
+                },
+
+                'G91.1': function (args) {
+                    // G91.1: Set to Arc Relative IJK Positioning
+                    // Example: G91.1
+                    // From now on, arc centers are relative to the starting
+                    // coordinate, e.g. center_x = this_x + I_value
+                    // This is the default, and the only possibility for most
+                    // controllers other than Mach3
+                    ijkrelative = true;
+                },
+
                 M82: function (args) {
                     // M82: Set E codes absolute (default)
                     // Descriped in Sprintrun source code.
 
                     // No-op, so long as M83 is not supported.
-                    cofg.addFakeSegment(args);
                 },
 
                 M84: function (args) {
@@ -3805,15 +3780,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // in between or after printjobs.
 
                     // No-op
-                    cofg.addFakeSegment(args);
                 },
-
-                'default': function (args, info) {
-                    //if (!args.isComment)
-                    //    console.log('Unknown command:', args.cmd, args, info);
-                    cofg.addFakeSegment(args);
-                },
-            });
+            })
 
             parser.parse(gcode);
 
