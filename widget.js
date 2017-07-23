@@ -2880,7 +2880,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         			    console.log("Prescan Running", token);
             			    modehandler();
             			} else {
-        			    console.log("Prescan Deferring", token);
             			    tokens.push(token);
             			}
         		    });
@@ -3766,6 +3765,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // From now on, arc centers are specified directly by
                     // the IJK parameters, e.g. center_x = I_value
                     // This is Mach3-specific
+                    console.log("IJK relative")
                     this.ijkrelative = false;
                 },
 
