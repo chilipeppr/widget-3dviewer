@@ -3802,18 +3802,19 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 },
             },
             // Mode-setting non-motion commands, of which many may appear on one line
+            // These take no arguments
             {
-                G17: function (){
+                G17: function () {
                     console.log("SETTING XY PLANE");
                     this.plane = "G17";
                 },
 
-                G18: function (){
+                G18: function () {
                     console.log("SETTING XZ PLANE");
                     this.plane = "G18";
                 },
 
-                G19: function (){
+                G19: function () {
                     console.log("SETTING YZ PLANE");
                     this.plane = "G19";
                 },
@@ -3835,6 +3836,26 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     console.log("SETTING UNITS TO MM!!!");
                     cofg.isUnitsMm = true; // true means mm
                 },
+
+                // A bunch of no-op modes that do not affect the viewer
+                G40: function () {}, // Tool radius compensation off
+                G41: function () {}, // Tool radius compensation left
+                G42: function () {}, // Tool radius compensation right
+                G45: function () {}, // Axis offset single increase
+                G46: function () {}, // Axis offset single decrease
+                G47: function () {}, // Axis offset double increase
+                G48: function () {}, // Axis offset double decrease
+                G49: function () {}, // Tool length offset compensation cancle
+                G54: function () {}, // Select work coordinate system 1
+                G55: function () {}, // Select work coordinate system 2
+                G56: function () {}, // Select work coordinate system 3
+                G57: function () {}, // Select work coordinate system 4
+                G58: function () {}, // Select work coordinate system 5
+                G59: function () {}, // Select work coordinate system 6
+                G61: function () {}, // Exact stop check mode
+                G64: function () {}, // Cancel G61
+                G69: function () {}, // Cancel G68
+
                 G90: function () {
                     // G90: Set to Absolute Positioning
                     // Example: G90
@@ -3869,14 +3890,33 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     ijkrelative = true;
                 },
 
-                M82: function (args) {
+                // No-op modal macros that do not affect the viewer
+                M07: function () {}, // Coolant on (mist)
+                M08: function () {}, // Coolant on (flood)
+                M09: function () {}, // Coolant off
+                M10: function () {}, // Pallet clamp on
+                M11: function () {}, // Pallet clamp off
+                M21: function () {}, // Mirror X axis
+                M22: function () {}, // Mirror Y axis
+                M23: function () {}, // Mirror off
+                M24: function () {}, // Thread pullout gradual off
+                M41: function () {}, // Select gear 1
+                M42: function () {}, // Select gear 2
+                M43: function () {}, // Select gear 3
+                M44: function () {}, // Select gear 4
+                M48: function () {}, // Allow feedrate override
+                M49: function () {}, // Disallow feedrate override
+                M52: function () {}, // Empty spindle
+                M60: function () {}, // Automatic pallet change
+
+                M82: function () {
                     // M82: Set E codes absolute (default)
                     // Descriped in Sprintrun source code.
 
                     // No-op, so long as M83 is not supported.
                 },
 
-                M84: function (args) {
+                M84: function () {
                     // M84: Stop idle hold
                     // Example: M84
                     // Stop the idle hold on all axis and extruder. In some cases the
