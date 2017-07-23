@@ -3566,7 +3566,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 if (ijkrelative) {
                     return v1 ? v1 + v2 : v2;
                 } else {
-                    return v1 ? v1 : 0;
+                    return v1 !== undefined ? v1 : 0;
                 }
                 //if (v1 == undefined) {
                 //    return ijkrelative ? v2 : 0;
