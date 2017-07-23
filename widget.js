@@ -3279,12 +3279,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // First, find the distance between points 1 and 2.  We'll call that q, 
                         // and it's given by sqrt((x2-x1)^2 + (y2-y1)^2).
                         var q = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2) + Math.pow(p2.z - p1.z, 2));
-                        // This takes care of precision problems whereby 2*q can be ever so
-                        // slightly larger than radius, leading to undefined results from
-                        // the Math.sqrt() below
-                        if (q < 0.0) {
-                            q = 0.0;
-                        }
+
                         // Second, find the point halfway between your two points.  We'll call it 
                         // (x3, y3).  x3 = (x1+x2)/2  and  y3 = (y1+y2)/2.  
                         var x3 = (p1.x + p2.x) / 2;
@@ -3303,6 +3298,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var pArc_1 = undefined;
                         var pArc_2 = undefined;
                         var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
+                        // calc can be NaN if precision problems result in q/2 being a little larger than radius
+                        if (Math.isNan(calc)) {
+                            calc = 0.0;
+                        }
                         var angle_point = undefined;
                         console.log("Arc points:", p1, p2, radius, q, calc);
                         
