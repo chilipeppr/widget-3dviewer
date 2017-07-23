@@ -487,7 +487,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             this.wakeAnimate();
             
-            //console.log("inspectMouseMove. evt:", evt);
+            console.log("inspectMouseMove. evt:", evt);
             
             var mouse = {};
             mouse.x = ( evt.clientX / window.innerWidth ) * 2 - 1;
@@ -2838,8 +2838,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 // collapse leading zero g cmds to no leading zero
                 text = text.replace(/G00/i, 'G0');
                 text = text.replace(/G0(\d)/i, 'G$1');
-                // Translate e.g. G90.1 to G90_1 to fit within the token syntax
-                //text = text.replace(/G(\d+)\.(\d+)/i, 'G$1_$2');
                 // add spaces before g cmds and xyzabcijkf params
                 text = text.replace(/([gmtxyzabcijkfst])/ig, " $1");
                 // remove spaces after xyzabcijkf params because a number should be directly after them
@@ -2868,42 +2866,42 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // strip off end of line comment
                     text = text.replace(/(;|\().*$/, ""); // ; or () trailing
                     //text = text.replace(/\(.*$/, ""); // () trailing
-                    
-        		    var tokens = [];
 
-        		    // Execute any non-motion commands, possibly many per line
-        		    // We do not create fake segments, as only one segment will
-        		    // be create for this line, later.
-        		    text.split(/\s+/).forEach(function (token) {
-        			var modehandler = modecmdhandlers[token.toUpperCase()];
-            			if (modehandler) {
-        			    console.log("Prescan Running", token, modehandler);
-            			    modehandler();
-            			} else {
-            			    tokens.push(token);
-            			}
-        		    });
+                    var tokens = [];
+
+                    // Execute any non-motion commands, possibly many per line
+                    // We do not create fake segments, as only one segment will
+                    // be create for this line, later.
+                    text.split(/\s+/).forEach(function (token) {
+                        var modehandler = modecmdhandlers[token.toUpperCase()];
+                        if (modehandler) {
+                            // console.log("Pre-running non-motion command:", token)
+                            modehandler();
+                        } else {
+                            tokens.push(token);
+                        }
+                    });
 
                     //console.log("tokens:", tokens);
-        		    // tokens contains what is left after handling the non-motion commands
-        		    if (tokens.length == 0) {
-            			// it was a comment or the line was empty after the non-motion commands
-            			// we still need to create a segment with xyz in p2
-            			// so that when we're being asked to /gotoline we have a position
-            			// for each gcode line, even comments. we just use the last real position
-            			// to give each gcode line (even a blank line) a spot to go to
-            			var args = {
+                    // tokens contains what is left after handling the non-motion commands
+                    if (tokens.length == 0) {
+                        // it was a comment or the line was empty after the non-motion commands
+                        // we still need to create a segment with xyz in p2
+                        // so that when we're being asked to /gotoline we have a position
+                        // for each gcode line, even comments. we just use the last real position
+                        // to give each gcode line (even a blank line) a spot to go to
+                        var args = {
                             'cmd': 'empty or comment',
                             'text': text,
                             'origtext': origtext,
                             'indx': info,
                             'isComment': isComment
-             			};
-            			var handler = this.handlers['default'];
-                		return handler(args, info, this);
-        			}
+                        };
+                        var handler = this.handlers['default'];
+                        return handler(args, info, this);
+                    }
 
-		            // There is more to do after having handled the non-motion commands
+	                // There is more to do after having handled the non-motion commands
                     var cmd = tokens[0].toUpperCase();
 
                     // check if a g or m cmd was included in gcode line
@@ -2912,7 +2910,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // cmd is what's assumed
                     isComment = false;
                     if (!cmd.match(/^(G|M|T)/i)) {
-			            //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
+	                    //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
                         // we need to use the last gcode cmd
                         cmd = this.lastArgs.cmd;
                         //console.log("using last cmd:", cmd);
@@ -2991,7 +2989,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         colorG0: 0x00ff00,
         colorG1: 0x0000ff,
         colorG2: 0x999900,
-        stuff: { a: 'b', b: 'c', },
         createObjectFromGCode: function (gcode, indxMax) {
             //debugger;
             // Credit goes to https://github.com/joewalnes/gcode-viewer
@@ -3143,7 +3140,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             };
             
             this.drawArcFrom2PtsAndCenter = function(vp1, vp2, vpArc, args) {
-                console.log("drawArcFrom2PtsAndCenter. vp1:", vp1, "vp2:", vp2, "vpArc:", vpArc, "args:", args);
+                //console.log("drawArcFrom2PtsAndCenter. vp1:", vp1, "vp2:", vp2, "vpArc:", vpArc, "args:", args);
                 
                 //var radius = vp1.distanceTo(vpArc);
                 //console.log("radius:", radius);
@@ -3365,7 +3362,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         };
                         //console.log("new pArc:", pArc);
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
-                        console.log("vpArc:", vpArc);
+                        //console.log("vpArc:", vpArc);
                     }
                     
                     var threeObjArc = this.drawArcFrom2PtsAndCenter(vp1, vp2, vpArc, args);
