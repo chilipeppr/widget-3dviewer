@@ -2987,18 +2987,16 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     });
 
                     //console.log("tokens:", tokens);
-                    // tokens contains what is left after handling the non-motion commands
-                    if (tokens.length != 0) {
-                        // There is more to do after the non-motion commands
-                        var cmd = tokens[0].toUpperCase();
-
+                    if (tokens) {
+                        var cmd = tokens[0];
+                        cmd = cmd.toUpperCase();
                         // check if a g or m cmd was included in gcode line
                         // you are allowed to just specify coords on a line
                         // and it should be assumed that the last specified gcode
                         // cmd is what's assumed
                         isComment = false;
                         if (!cmd.match(/^(G|M|T)/i)) {
-                           // if comment, drop it
+                            // if comment, drop it
                             /*
                             if (cmd.match(/(;|\(|<)/)) {
                                 // is comment. do nothing.
@@ -3020,7 +3018,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             // we have a normal cmd as opposed to just an xyz pos where
                             // it assumes you should use the last cmd
                             // however, need to remove inline comments (TODO. it seems parser works fine for now)
-
+                            
                         }
                         var args = {
                             'cmd': cmd,
