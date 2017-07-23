@@ -2884,7 +2884,80 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
                     //console.log("tokens:", tokens);
                     // tokens contains what is left after handling the non-motion commands
-                    if (tokens.length == 0) {
+                    if (tokens.length != 0) {
+                        // There is more to do after the non-motion commands
+                        var cmd = tokens[0].toUpperCase();
+
+                        // check if a g or m cmd was included in gcode line
+                        // you are allowed to just specify coords on a line
+                        // and it should be assumed that the last specified gcode
+                        // cmd is what's assumed
+                        isComment = false;
+                        if (!cmd.match(/^(G|M|T)/i)) {
+                            //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
+                            // we need to use the last gcode cmd
+                            cmd = this.lastArgs.cmd;
+                            //console.log("using last cmd:", cmd);
+                            tokens.unshift(cmd); // put at spot 0 in array
+                            //console.log("tokens:", tokens);
+                        }
+                        var args = {
+                            'cmd': cmd,
+                            'text': text,
+                            'origtext': origtext,
+                            'indx': info,
+                            'isComment': isComment,
+                            'feedrate': null,
+                            'plane': undefined
+                        };
+
+                        //console.log("args:", args);
+                        if (tokens.length > 1  && !isComment) {
+                            tokens.splice(1).forEach(function (token) {
+                                //console.log("token:", token);
+                                if (token && token.length > 0) {
+                                    var key = token[0].toLowerCase();
+                                    var value = parseFloat(token.substring(1));
+                                    //console.log("value:", value, "key:", key);
+                                    //if (isNaN(value))
+                                    //    console.error("got NaN. val:", value, "key:", key, "tokens:", tokens);
+                                    args[key] = value;
+                                } else {
+                                    //console.log("couldn't parse token in foreach. weird:", token);
+                                }
+                            });
+                        }
+    
+                        // don't save if saw a comment
+                        if (!args.isComment) {
+                            this.lastArgs = args;
+                            //console.log("just saved lastArgs for next use:", this.lastArgs);
+                        } else {
+                            //console.log("this was a comment, so didn't save lastArgs");
+                        }
+                        console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
+                        var handler = this.handlers[cmd] || this.handlers['default'];
+                        if (handler) {
+                            // scan for feedrate
+                            if (args.text.match(/F([\d.]+)/i)) {
+                                // we have a new feedrate
+                                var feedrate = parseFloat(RegExp.$1);
+                                console.log("got feedrate on this line. feedrate:", feedrate, "args:", args);
+                                args.feedrate = feedrate;
+                                this.lastFeedrate = feedrate;
+                            } else {
+                                // use feedrate from prior lines
+                                args.feedrate = this.lastFeedrate;
+                                //if (args.feedrate 
+                            }
+                                
+                            //console.log("about to call handler. args:", args, "info:", info, "this:", this);
+                                
+                            return handler(args, info, this);
+                        } else {
+                            console.error("No handler for gcode command!!!");
+                        }
+                    } else {
                         // it was a comment or the line was empty after the non-motion commands
                         // we still need to create a segment with xyz in p2
                         // so that when we're being asked to /gotoline we have a position
@@ -2901,78 +2974,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         return handler(args, info, this);
                     }
 
-	                // There is more to do after having handled the non-motion commands
-                    var cmd = tokens[0].toUpperCase();
-
-                    // check if a g or m cmd was included in gcode line
-                    // you are allowed to just specify coords on a line
-                    // and it should be assumed that the last specified gcode
-                    // cmd is what's assumed
-                    isComment = false;
-                    if (!cmd.match(/^(G|M|T)/i)) {
-	                    //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
-                        // we need to use the last gcode cmd
-                        cmd = this.lastArgs.cmd;
-                        //console.log("using last cmd:", cmd);
-                        tokens.unshift(cmd); // put at spot 0 in array
-                        //console.log("tokens:", tokens);
-                    }
-                    var args = {
-                        'cmd': cmd,
-                        'text': text,
-                        'origtext': origtext,
-                        'indx': info,
-                        'isComment': isComment,
-                        'feedrate': null,
-                        'plane': undefined
-                    };
-                        
-                    //console.log("args:", args);
-                    if (tokens.length > 1  && !isComment) {
-                        tokens.splice(1).forEach(function (token) {
-                            //console.log("token:", token);
-                            if (token && token.length > 0) {
-                                var key = token[0].toLowerCase();
-                                var value = parseFloat(token.substring(1));
-                                //console.log("value:", value, "key:", key);
-                                //if (isNaN(value))
-                                //    console.error("got NaN. val:", value, "key:", key, "tokens:", tokens);
-                                args[key] = value;
-                            } else {
-                                //console.log("couldn't parse token in foreach. weird:", token);
-                            }
-                        });
-                    }
-
-                    // don't save if saw a comment
-                    if (!args.isComment) {
-                        this.lastArgs = args;
-                        //console.log("just saved lastArgs for next use:", this.lastArgs);
-                    } else {
-                        //console.log("this was a comment, so didn't save lastArgs");
-                    }
-                    console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
-                    var handler = this.handlers[cmd] || this.handlers['default'];
-                    if (handler) {
-                        // scan for feedrate
-                        if (args.text.match(/F([\d.]+)/i)) {
-                            // we have a new feedrate
-                            var feedrate = parseFloat(RegExp.$1);
-                            console.log("got feedrate on this line. feedrate:", feedrate, "args:", args);
-                            args.feedrate = feedrate;
-                            this.lastFeedrate = feedrate;
-                        } else {
-                            // use feedrate from prior lines
-                            args.feedrate = this.lastFeedrate;
-                            //if (args.feedrate 
-                        }
-                            
-                        //console.log("about to call handler. args:", args, "info:", info, "this:", this);
-                            
-                        return handler(args, info, this);
-                    } else {
-                        console.error("No handler for gcode command!!!");
-                    }
                 }
 
             }
@@ -3819,7 +3820,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
                     // No-op
                 },
-            })
+            });
 
             parser.parse(gcode);
 
