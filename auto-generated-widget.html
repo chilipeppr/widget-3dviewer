@@ -3076,24 +3076,26 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         } else {
                             console.error("No handler for gcode command!!!");
                         }
-
-                    } else {
-                        // it was a comment or the line was empty after the non-motion commands
-                        // we still need to create a segment with xyz in p2
-                        // so that when we're being asked to /gotoline we have a position
-                        // for each gcode line, even comments. we just use the last real position
-                        // to give each gcode line (even a blank line) a spot to go to
-                        var args = {
-                            'cmd': 'empty or comment',
-                            'text': text,
-                            'origtext': origtext,
-                            'indx': info,
-                            'isComment': isComment
-                        };
-                        var handler = this.handlers['default'];
-                        return handler(args, info, this);
                     }
                 }
+                // If handler() was called above, it created a segment and then
+                // this function returned, so this point will be reached only if a
+                // segment has not yet been created. This happens if the line was
+                // a comment or if the line was empty after the non-motion commands
+                
+                // we still need to create a segment with xyz in p2
+                // so that when we're being asked to /gotoline we have a position
+                // for each gcode line, even comments. we just use the last real position
+                // to give each gcode line (even a blank line) a spot to go to
+                var args = {
+                    'cmd': 'empty or comment',
+                    'text': text,
+                    'origtext': origtext,
+                    'indx': info,
+                    'isComment': isComment
+                };
+                var handler = this.handlers['default'];
+                return handler(args, info, this);
             }
 
             this.parse = function (gcode) {
