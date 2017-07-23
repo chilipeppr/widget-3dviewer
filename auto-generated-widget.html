@@ -2941,6 +2941,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 // collapse leading zero g cmds to no leading zero
                 text = text.replace(/G00/i, 'G0');
                 text = text.replace(/G0(\d)/i, 'G$1');
+                // Translate e.g. G90.1 to G90_1 to fit within the token syntax
+                text = text.replace(/G(\d)\.(\d)/i, 'G$1_$2');
                 // add spaces before g cmds and xyzabcijkf params
                 text = text.replace(/([gmtxyzabcijkfst])/ig, " $1");
                 // remove spaces after xyzabcijkf params because a number should be directly after them
@@ -2976,7 +2978,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var cmd = tokens[0];
                         cmd = cmd.toUpperCase();
                         // Change '.' in command to '_', e.g. G90.1 -> G90_1
-                        cmd = cmd.replace(/\./, "_");
+                        //cmd = cmd.replace(/\./, "_");
                         // check if a g or m cmd was included in gcode line
                         // you are allowed to just specify coords on a line
                         // and it should be assumed that the last specified gcode
