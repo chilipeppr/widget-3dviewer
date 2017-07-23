@@ -3299,7 +3299,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var pArc_2 = undefined;
                         var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
                         // calc can be NaN if precision problems result in q/2 being a little larger than radius
-                        if (Math.isNaN(calc)) {
+                        if (isNaN(calc)) {
                             calc = 0.0;
                         }
                         var angle_point = undefined;
