@@ -3756,7 +3756,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // Example: G90
                     // All coordinates from now on are absolute relative to the
                     // origin of the machine. (This is the RepRap default.)
-                    this.relative = false;
+                    relative = false;
                 },
 
                 'G90.1': function () {
@@ -3765,8 +3765,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // From now on, arc centers are specified directly by
                     // the IJK parameters, e.g. center_x = I_value
                     // This is Mach3-specific
-                    console.log("IJK relative");
-                    this.ijkrelative = false;
+                    ijkrelative = false;
                 },
 
                 G91: function () {
