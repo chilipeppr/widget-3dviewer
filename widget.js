@@ -3759,24 +3759,24 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     this.relative = false;
                 },
 
-                'G90.1': function (args) {
+                'G90.1': function () {
                     // G90.1: Set to Arc Absolute IJK Positioning
                     // Example: G90.1
                     // From now on, arc centers are specified directly by
                     // the IJK parameters, e.g. center_x = I_value
                     // This is Mach3-specific
-                    console.log("IJK relative")
+                    console.log("IJK relative");
                     this.ijkrelative = false;
                 },
 
-                G91: function (args) {
+                G91: function () {
                     // G91: Set to Relative Positioning
                     // Example: G91
                     // All coordinates from now on are relative to the last position.
                     relative = true;
                 },
 
-                'G91.1': function (args) {
+                'G91.1': function () {
                     // G91.1: Set to Arc Relative IJK Positioning
                     // Example: G91.1
                     // From now on, arc centers are relative to the starting
