@@ -3748,10 +3748,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-                        arci: args.i ? args.i : null,
-                        arcj: args.j ? args.j : null,
-                        arck: args.k ? args.k : null,
-                        arcr: args.r ? args.r : null,
+                        arci: args.i !== undefined ? args.i : null,
+                        arcj: args.j !== undefined ? args.j : null,
+                        arck: args.k !== undefined ? args.k : null,
+                        arcr: args.r !== undefined ? args.r : null,
                     };
                    
                     //console.log("G2 newLine:", newLine);
