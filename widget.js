@@ -3653,7 +3653,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         arcr: args.r ? args.r : null,
                     };
                    
-                    //console.log("G2 newLine:", newLine);
+                    console.log("arc G2 newLine:", newLine);
                     //newLine.g2 = true;
                     newLine.arc = true;
                     newLine.clockwise = true;
