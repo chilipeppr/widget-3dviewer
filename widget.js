@@ -2866,12 +2866,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // strip off end of line comment
                     text = text.replace(/(;|\().*$/, ""); // ; or () trailing
                     //text = text.replace(/\(.*$/, ""); // () trailing
-
+                    
                     var tokens = [];
 
-                    // Execute any non-motion commands, possibly many per line
-                    // We do not create fake segments, as only one segment will
-                    // be create for this line, later.
+                    // Execute any non-motion commands on the line immediately
+                    // Add other commands to the tokens list for later handling
+                    // Segments are not created for non-motion commands;
+                    // the segment for this line is created later
                     text.split(/\s+/).forEach(function (token) {
                         var modehandler = modecmdhandlers[token.toUpperCase()];
                         if (modehandler) {
