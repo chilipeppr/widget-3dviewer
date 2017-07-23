@@ -2942,7 +2942,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 text = text.replace(/G00/i, 'G0');
                 text = text.replace(/G0(\d)/i, 'G$1');
                 // Translate e.g. G90.1 to G90_1 to fit within the token syntax
-                text = text.replace(/G(\d)\.(\d)/i, 'G$1_$2');
+                text = text.replace(/G(\d+)\.(\d+)/i, 'G$1_$2');
                 // add spaces before g cmds and xyzabcijkf params
                 text = text.replace(/([gmtxyzabcijkfst])/ig, " $1");
                 // remove spaces after xyzabcijkf params because a number should be directly after them
