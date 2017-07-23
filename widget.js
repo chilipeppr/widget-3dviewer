@@ -3563,7 +3563,16 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var ijkrelative = true;  // For Mach3 Arc IJK Absolute mode
             
             this.ijkabsolute = function (v1, v2) {
-                return ijkrelative ? v1 + v2 : v2;
+                if (ijkrelative) {
+                    return v1 ? v1 + v2 : v2;
+                } else {
+                    return v1 ? v1 : 0;
+                }
+                //if (v1 == undefined) {
+                //    return ijkrelative ? v2 : 0;
+                //} else {
+                //    return ijkrelative ? v1 + v2 : v2;
+                //}
             }
 
             this.addFakeSegment = function(args) {
@@ -3643,9 +3652,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-                        arci: args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : lastLine.x,
-                        arcj: args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : lastLine.y,
-                        arck: args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : lastLine.z,
+                        arci: cofg.ijkabsolute(lastLine.x, args.i),
+                        arcj: cofg.ijkabsolute(lastLine.y, args.j),
+                        arck: cofg.ijkabsolute(lastLine.z, args.k),
                         arcr: args.r ? args.r : null,
                     };
                    
