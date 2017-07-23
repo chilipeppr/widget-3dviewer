@@ -2987,7 +2987,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     });
 
                     //console.log("tokens:", tokens);
-                    if (tokens) {
+                    if (tokens.length) {
                         var cmd = tokens[0];
                         cmd = cmd.toUpperCase();
                         // check if a g or m cmd was included in gcode line
