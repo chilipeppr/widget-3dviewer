@@ -3019,7 +3019,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // we need to use the last gcode cmd
                         cmd = this.lastArgs.cmd;
                         //console.log("using last cmd:", cmd);
-                        residue.unshift(cmd); // put at spot 0 in array
+                        tokens.unshift(cmd); // put at spot 0 in array
                         //console.log("tokens:", tokens);
                     }
                     var args = {
