@@ -487,7 +487,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             this.wakeAnimate();
             
-            console.log("inspectMouseMove. evt:", evt);
+            //console.log("inspectMouseMove. evt:", evt);
             
             var mouse = {};
             mouse.x = ( evt.clientX / window.innerWidth ) * 2 - 1;
