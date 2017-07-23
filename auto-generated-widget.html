@@ -2981,8 +2981,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         		    text.split(/\s+/).forEach(function (token) {
         			var modehandler = modecmdhandlers[token.toUpperCase()];
             			if (modehandler) {
+        			    console.log("Prescan Running", token);
             			    modehandler();
             			} else {
+        			    console.log("Prescan Deferring", token);
             			    tokens.push(token);
             			}
         		    });
