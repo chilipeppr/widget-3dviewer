@@ -3667,10 +3667,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 return relative ? v1 + v2 : v2;
             }
             
-            var ijkabsolute = false;  // For Mach3 Arc IJK Absolute mode
+            var ijkrelative = true;  // For Mach3 Arc IJK Absolute mode
             
-            this.ijkposition = function (v1, v2) {
-                return ijkabsolute ? v2 : v1 + v2;
+            this.ijkabsolute = function (v1, v2) {
+                return ijkrelative ? v1 + v2 : v2;
             }
 
             this.addFakeSegment = function(args) {
@@ -3840,7 +3840,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // This is Mach3-specific
 
 
-                    ijkabsolute = true;
+                    ijkrelative = false;
                     cofg.addFakeSegment(args);
                 },
 
@@ -3862,7 +3862,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // This is the default, and the only possibility for most
                     // controllers other than Mach3
 
-                    ijkabsolute = false;
+                    ijkrelative = true;
                     cofg.addFakeSegment(args);
                 },
 
