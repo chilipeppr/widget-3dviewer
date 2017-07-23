@@ -3299,7 +3299,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var pArc_2 = undefined;
                         var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
                         var angle_point = undefined;
-                        console.log("Arc points:", p1, p2, radius, calc);
+                        console.log("Arc points:", p1, p2, radius, q, calc);
                         
                         switch(args.plane){
                             case "G18":
