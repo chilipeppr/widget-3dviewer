@@ -3373,9 +3373,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         else*/
                         console.log("ijk:", p2);
                         var pArc = {
-                            x: p2.hasOwnProperty('arci') ? cofg.ijkposition(p1.x, p2.arci) : p1.x,
-                            y: p2.hasOwnProperty('arcj') ? cofg.ijkposition(p1.y, p2.arcj) : p1.y,
-                            z: p2.hasOwnProperty('arck') ? cofg.ijkposition(p1.z, p2.arck) : p1.z,
+                            x: p2.arci == null ? p1.x : cofg.ijkposition(p1.x, p2.arci),
+                            y: p2.arcj == null ? p1.y : cofg.ijkposition(p1.y, p2.arcj),
+                            z: p2.arck == null ? p1.z : cofg.ijkposition(p1.z, p2.arck),
                         };
                         //console.log("new pArc:", pArc);
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
