@@ -3467,6 +3467,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         
                         if((p2.clockwise === true && radius >= 0) || (p2.clockwise === false && radius < 0)) vpArc = new THREE.Vector3(cw.x, cw.y, cw.z);
                         else vpArc = new THREE.Vector3(ccw.x, ccw.y, ccw.z);
+                        console.log("rArc:", pArc_1, pArc_2, vpArc);
                         
                     } else {
                         // this code deals with IJK gcode commands
