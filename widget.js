@@ -2894,12 +2894,29 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // cmd is what's assumed
                         isComment = false;
                         if (!cmd.match(/^(G|M|T)/i)) {
-                            //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
-                            // we need to use the last gcode cmd
-                            cmd = this.lastArgs.cmd;
-                            //console.log("using last cmd:", cmd);
-                            tokens.unshift(cmd); // put at spot 0 in array
-                            //console.log("tokens:", tokens);
+                           // if comment, drop it
+                            /*
+                            if (cmd.match(/(;|\(|<)/)) {
+                                // is comment. do nothing.
+                                isComment = true;
+                                text = origtext;
+                                //console.log("got comment:", cmd);
+                            } else {
+                            */
+
+                                //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
+                                // we need to use the last gcode cmd
+                                cmd = this.lastArgs.cmd;
+                                //console.log("using last cmd:", cmd);
+                                tokens.unshift(cmd); // put at spot 0 in array
+                                //console.log("tokens:", tokens);
+                            //}
+                        } else {
+                            
+                            // we have a normal cmd as opposed to just an xyz pos where
+                            // it assumes you should use the last cmd
+                            // however, need to remove inline comments (TODO. it seems parser works fine for now)
+
                         }
                         var args = {
                             'cmd': cmd,
@@ -2910,7 +2927,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             'feedrate': null,
                             'plane': undefined
                         };
-
+                        
                         //console.log("args:", args);
                         if (tokens.length > 1  && !isComment) {
                             tokens.splice(1).forEach(function (token) {
@@ -2927,7 +2944,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                 }
                             });
                         }
-    
+                        var handler = this.handlers[cmd] || this.handlers['default'];
+
                         // don't save if saw a comment
                         if (!args.isComment) {
                             this.lastArgs = args;
@@ -2935,8 +2953,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         } else {
                             //console.log("this was a comment, so didn't save lastArgs");
                         }
-                        console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
-                        var handler = this.handlers[cmd] || this.handlers['default'];
+                        //console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
                         if (handler) {
                             // scan for feedrate
                             if (args.text.match(/F([\d.]+)/i)) {
@@ -2950,13 +2967,14 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                 args.feedrate = this.lastFeedrate;
                                 //if (args.feedrate 
                             }
-                                
+                            
                             //console.log("about to call handler. args:", args, "info:", info, "this:", this);
-                                
+                            
                             return handler(args, info, this);
                         } else {
                             console.error("No handler for gcode command!!!");
                         }
+
                     } else {
                         // it was a comment or the line was empty after the non-motion commands
                         // we still need to create a segment with xyz in p2
@@ -2973,9 +2991,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var handler = this.handlers['default'];
                         return handler(args, info, this);
                     }
-
                 }
-
             }
 
             this.parse = function (gcode) {
