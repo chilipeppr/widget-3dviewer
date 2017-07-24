@@ -3298,13 +3298,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var pArc_1 = undefined;
                         var pArc_2 = undefined;
                         var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
-                        // calc can be NaN if precision problems result in q/2 being a little larger than radius
+                        // calc can be NaN if q/2 is epsilon larger than radius due to finite precision
                         if (isNaN(calc)) {
                             calc = 0.0;
                         }
                         var angle_point = undefined;
-                        console.log("Arc points:", p1, p2, radius, q, calc);
-                        
+
                         switch(args.plane){
                             case "G18":
                                 pArc_1 = {
@@ -3657,7 +3656,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         arcr: args.r ? args.r : null,
                     };
                    
-                    console.log("arc G2 newLine:", newLine, lastLine, args);
+                    //console.log("G2 newLine:", newLine);
                     //newLine.g2 = true;
                     newLine.arc = true;
                     newLine.clockwise = true;
