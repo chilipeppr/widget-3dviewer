@@ -3403,11 +3403,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var pArc_2 = undefined;
                         var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
                         // calc can be NaN if q/2 is epsilon larger than radius due to finite precision
+                        // When that happens, the calculated center is incorrect
                         if (isNaN(calc)) {
                             calc = 0.0;
                         }
                         var angle_point = undefined;
-
+                        
                         switch(args.plane){
                             case "G18":
                                 pArc_1 = {
@@ -3471,8 +3472,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         
                         if((p2.clockwise === true && radius >= 0) || (p2.clockwise === false && radius < 0)) vpArc = new THREE.Vector3(cw.x, cw.y, cw.z);
                         else vpArc = new THREE.Vector3(ccw.x, ccw.y, ccw.z);
-                        console.log("rArc:", pArc_1, pArc_2, vpArc);
-                        
+
                     } else {
                         // this code deals with IJK gcode commands
                         /*if(args.clockwise === false || args.cmd === "G3")
