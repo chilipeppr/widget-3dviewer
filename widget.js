@@ -2395,11 +2395,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }, 2000);
             }
             
-            if (this.moveAnimate || this.gotoAnimate || this.tweenAnimate || this.inspectAnimate) {
-                if (this.animationLatencyTimer != null) {
-                    return;
-                }
-                
+            if ((this.moveAnimate || this.gotoAnimate || this.tweenAnimate || this.inspectAnimate) && this.animationLatencyTimer == null) {
                 var animationDelay = (!this.moveAnimate && this.disableAnimation) ? 2000 : this.animationLatencyDelay;
                 
                 this.animationLatencyTimer = setTimeout(function() {
