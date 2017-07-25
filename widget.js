@@ -209,6 +209,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         jogLatencyDelay: 200,
         
         moveAnimate: false,
+        gotoAnimate: false,
         tweenAnimate: false,
         inspectAnimate: false,
         
@@ -1474,9 +1475,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
             }
             
-            this.moveAnimate = true;
+            this.gotoAnimate = true;
             this.animate();
-            this.moveAnimate = false;
+            this.gotoAnimate = false;
         },
         gotoLine: function(data) {
             // this method is sort of like playNextTween, but we are jumping to a specific
@@ -2394,7 +2395,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }, 2000);
             }
             
-            if ((this.moveAnimate || this.tweenAnimate || this.inspectAnimate) && this.animationLatencyTimer == null) {
+            if (this.moveAnimate || this.gotoAnimate || this.tweenAnimate || this.inspectAnimate) {
+                if (this.animationLatencyTimer != null) {
+                    return;
+                }
+                
                 var animationDelay = (!this.moveAnimate && this.disableAnimation) ? 2000 : this.animationLatencyDelay;
                 
                 this.animationLatencyTimer = setTimeout(function() {
