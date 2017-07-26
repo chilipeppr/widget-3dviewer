@@ -1543,6 +1543,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // we are sent this command by the CNC controller generic interface
             console.log("gotoXyz. data:", data);
             
+            if (this.animationLatencyTimer) {
+                console.log("gotoXyz. skipping logic, animation already in progress");
+                return;
+            }
+            
             // TODO: fix
             //this.animNoSleep();
             this.tweenAnimate = false;
