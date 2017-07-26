@@ -1432,6 +1432,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 this.animate();
             }
         },
+        
         gotoXyz: function(data) {
             // we are sent this command by the CNC controller generic interface
             console.log("gotoXyz. data:", data);
@@ -1439,7 +1440,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // TODO: fix
             //this.animNoSleep();
             this.tweenAnimate = false;
-            
             this.tweenIsPlaying = false;
             this.tweenPaused = true;
             
