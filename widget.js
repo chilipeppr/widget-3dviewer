@@ -4,7 +4,7 @@
 // ChiliPeppr Widget/Element Javascript
 requirejs.config({
     paths: {
-        Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r85/three',
+        Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r86/three',
         
         ThreeTrackballControls: 'https://cdn.rawgit.com/mrdoob/three.js/dev/examples/js/controls/TrackballControls',
         ThreeTween: 'https://cdn.rawgit.com/tweenjs/tween.js/master/src/Tween',
@@ -2707,7 +2707,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
                 var acmat = new THREE.LineBasicMaterial({
                     color: this.colorArc,
-                    opacity: 0.5,
+                    opacity: 0.9,
                     transparent: true
                 });
                 
@@ -3080,6 +3080,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
 
             this.addFakeSegment = function(args) {
+                console.log('Fake segment', args);
+                
                 //line.args = args;
                 var arg2 = {
                     isFake : true,
@@ -3095,7 +3097,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     'renderObject': null
                 });
             }
-
+            
             var cofg = this;
             var parser = new this.GCodeParser({
                 //set the g92 offsets for the parser - defaults to no offset
@@ -3177,22 +3179,40 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     gcp.handlers.G2(args, indx, gcp);
                 },
 
-                G17: function (args){
-                    console.log("SETTING XY PLANE");
+                G17: function (args, indx, gcp){
+                    console.log("SETTING XY PLANE", args);
                     plane = "G17";
-                    cofg.addFakeSegment(args);
+                    
+                    if (args.origtext.length > 3) {
+                       var line = args.origtext.replace('G17 ', ''); 
+                       parser.parseLine(line);
+                    } else {
+                        cofg.addFakeSegment(args);
+                    }
                 },
 
-                G18: function (args){
-                    console.log("SETTING XZ PLANE");
+                G18: function (args, indx, gcp){
+                    console.log("SETTING XZ PLANE", args);
                     plane = "G18";
-                    cofg.addFakeSegment(args);
+                    
+                    if (args.origtext.length > 3) {
+                       var line = args.origtext.replace('G18 ', ''); 
+                       parser.parseLine(line);
+                    } else {
+                        cofg.addFakeSegment(args);
+                    }
                 },
 
-                G19: function (args){
-                    console.log("SETTING YZ PLANE");
+                G19: function (args, indx, gcp){
+                    console.log("SETTING YZ PLANE", args, indx);
                     plane = "G19";
-                    cofg.addFakeSegment(args);
+                    
+                    if (args.origtext.length > 3) {
+                       var line = args.origtext.replace('G19 ', ''); 
+                       parser.parseLine(line);
+                    } else {
+                        cofg.addFakeSegment(args);
+                    }
                 },
 
                 G20: function (args) {
