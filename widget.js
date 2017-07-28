@@ -3027,7 +3027,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 
                 gcodeObj.userData.p2 = p2;
                 gcodeObj.userData.args = args;
-                //gcodeObj.userData.lines = this.parsedLines;
                 
                 // DISTANCE CALC
                 // add distance so we can calc estimated time to run
