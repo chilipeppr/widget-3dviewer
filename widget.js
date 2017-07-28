@@ -188,7 +188,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         axes: null, // global property to store axes that we drew
         element: null, // scene element
         
-        lines: [],
+        parsedLines: [],
         lineObjects: [],
         
         sceneCenter: null,
@@ -1237,7 +1237,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.viewExtents();
             this.drawAxesToolAndExtents();
             this.onUnitsChanged();
-            this.setDetails(this.lines.length + " GCode Lines");
+            this.setDetails(this.parsedLines.length + " GCode Lines");
             
             // TODO: wakeAnimate change
             this.animate();
@@ -1496,8 +1496,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.tweenIsPlaying = false;
             this.tweenPaused = true;
             
-            var lines = this.lines;
-            console.log("lines:", lines[data.line]);
+            var lines = this.parsedLines;
+            console.log("parsedLines:", lines[data.line]);
             
             var curLine = lines[data.line];
             var curPt = curLine.p2;
@@ -1542,7 +1542,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             var that = this;
             
-            var lines = this.lines;
+            var lines = this.parsedLines;
             
             if (this.tweenIndex + 1 > lines.length - 1) {
                 // done tweening
@@ -1906,7 +1906,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.decorate.add(txtZ);
             
             // Add estimated time and distance
-            var ud = this.lines;
+            var ud = this.parsedLines;
             var udLastLine = ud[ud.length - 1].p2;
             
             // get pretty print of time
@@ -2610,7 +2610,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var object = new THREE.Object3D();
             
             // reset our arrays
-            this.lines = [];
+            this.parsedLines = [];
             this.lineObjects = [];
             
             this.offsetG92 = {x:0, y:0, z:0, e:0};
@@ -3024,7 +3024,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 
                 gcodeObj.userData.p2 = p2;
                 gcodeObj.userData.args = args;
-                
+                gcodeObj.userData.lines = this.parsedLines;
                 
                 // DISTANCE CALC
                 // add distance so we can calc estimated time to run
@@ -3092,7 +3092,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 object.add(gcodeObj);
                 
                 // add segment to array for later use
-                this.lines.push({
+                this.parsedLines.push({
                     'p2': p2,
                     'args': args,
                     'renderObject': gcodeObj
@@ -3131,7 +3131,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 
                 if (arg2.text.match(/^(;|\(|<)/)) arg2.isComment = true;
 
-                this.lines.push({
+                this.parsedLines.push({
                     'p2': lastLine,    // since this is fake, just use lastLine as xyz
                     'args': arg2,
                     'renderObject': null
