@@ -1626,19 +1626,20 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
             })
             .onUpdate(function () {
-                if (this.x && this.y && this.z) {
-                    that.toolhead.position.x = this.x;
-                    that.toolhead.position.y = this.y;
-                    that.toolhead.position.z = this.z;
+                console.log(this._object);
+                if (this._object) {
+                    that.toolhead.position.x = this._object.x;
+                    that.toolhead.position.y = this._object.y;
+                    that.toolhead.position.z = this._object.z;
 
                     if (this.showShadow) {
-                        that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
-                        that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
+                        that.toolhead.children[0].target.position.set(this._object.x, this._object.y, that.toolhead.position.z);
+                        that.toolhead.children[1].target.position.set(this._object.x, this._object.y, that.toolhead.position.z);
                     }
                 
                     that.lookAtToolHead();
                 } else {
-                    console.log('WTF', this);
+                    //console.log('WTF', this);
                 }
             });
             
@@ -1681,16 +1682,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 that.playNextTween();
             })
             .onUpdate(function () {
-                if (this.x && this.y && this.z) {
-                    console.log('tween toolhead position:', this.x, this.y, this.z);
-                    that.toolhead.position.x = this.x;
-                    that.toolhead.position.y = this.y;
-                    that.toolhead.position.z = this.z;
+                if (this._object) {
+                    that.toolhead.position.x = this._object.x;
+                    that.toolhead.position.y = this._object.y;
+                    that.toolhead.position.z = this._object.z;
                 
                     // update where shadow casting light is looking
                     if (this.showShadow) {
-                        that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
-                        that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
+                        that.toolhead.children[0].target.position.set(this._object.x, this._object.y, that.toolhead.position.z);
+                        that.toolhead.children[1].target.position.set(this._object.x, this._object.y, that.toolhead.position.z);
                     } 
                 }
             });
