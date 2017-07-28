@@ -3183,7 +3183,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     console.log("SETTING XY PLANE", args);
                     plane = "G17";
                     
-                    if (args.origtext.length > 3) {
+                    if (args.origtext.length > 5) {
                        var line = args.origtext.replace('G17 ', ''); 
                        parser.parseLine(line);
                     } else {
@@ -3195,7 +3195,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     console.log("SETTING XZ PLANE", args);
                     plane = "G18";
                     
-                    if (args.origtext.length > 3) {
+                    if (args.origtext.length > 5) {
                        var line = args.origtext.replace('G18 ', ''); 
                        parser.parseLine(line);
                     } else {
@@ -3207,7 +3207,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     console.log("SETTING YZ PLANE", args, indx);
                     plane = "G19";
                     
-                    if (args.origtext.length > 3) {
+                    if (args.origtext.length > 5) {
                        var line = args.origtext.replace('G19 ', ''); 
                        parser.parseLine(line);
                     } else {
