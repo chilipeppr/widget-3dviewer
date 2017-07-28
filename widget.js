@@ -3193,29 +3193,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     arc itself by figuring out the sub-segments . */
                     args.plane = plane; //set the plane for this command to whatever the current plane is
                     
-                    var arci;
-                    var arcj;
-                    var arck;
-                    
-                    if (!ijkrelative) {
-                        arci = args.i ? args.i : null;
-                        arcj = args.j ? args.j : null;
-                        arck = args.k ? args.k : null; 
-                    } else {
-                        arci = args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : lastLine.x;
-                        arcj = args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : lastLine.y;
-                        arck = args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : lastLine.z;
-                    }
-                    
                     var newLine = {
                         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
                         y: args.y !== undefined ? cofg.absolute(lastLine.y, args.y) + cofg.offsetG92.y : lastLine.y,
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-                        arci: arci,
-                        arcj: arcj,
-                        arck: arck,
+                        arci: args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : null,
+                        arcj: args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : null,
+                        arck: args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : null,
                         arcr: args.r ? args.r : null,
                     };
                    
