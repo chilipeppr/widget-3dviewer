@@ -1604,6 +1604,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             var lines = this.parsedLines;
             console.log("parsedLines:", lines[data.line]);
+            
             var curLine = lines[data.line];
             var curPt = curLine.p2;
             
@@ -1666,7 +1667,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var isLooking = true;
             var indxStart = this.tweenIndex + 1;
             
-            while(isLooking) {
+            while (isLooking) {
                 if (indxStart > lines.length - 1) {
                     console.log("we are out of lines to look at");
                     that.stopSampleRun();
@@ -1674,40 +1675,40 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
                 if (lines[indxStart].args.isFake) {
                     // this is fake, skip it
-                    //console.log("found fake line at indx:", indxStart);
+                    console.log("found fake line at indx:", indxStart);
                 } else {
-                    // we found a good one. use it
-                    //console.log("found one at indx:", indxStart);
                     isLooking = false;
                     break;
                 }
+                
                 indxStart++;
             }
             
             var ll;
-            if (lines[this.tweenIndex].p2) ll = lines[this.tweenIndex].p2;
-            else ll = {x:0,y:0,z:0};
+            if (lines[this.tweenIndex].p2) {
+                ll = lines[this.tweenIndex].p2;
+            } else {
+                ll = {x:0, y:0, z:0};
+            }
             
             console.log("start line:", lines[this.tweenIndex], "ll:", ll);
-            
             this.tweenIndex = indxStart;
             var cl = lines[this.tweenIndex].p2;
             console.log("end line:", lines[this.tweenIndex], " el:", cl);
-            
             
             var curTween = new TWEEN.Tween({
                 x: ll.x,
                 y: ll.y,
                 z: ll.z
             })
-                .to({
+            .to({
                 x: cl.x,
                 y: cl.y,
                 z: cl.z
             }, 1000 / that.tweenSpeed)
             .onStart(function () {
                 that.tween = curTween;
-                //console.log("onStart");
+                console.log("onStart");
                 // create a new line to show path
                 
                 var lineGeo = new THREE.Geometry();
@@ -1720,7 +1721,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             })
             .onComplete(function () {
-                //console.log("onComplete");
+                console.log("onComplete");
                 that.scene.remove(that.tweenHighlight);
                 //setTimeout(function() {that.playNextTween();}, 0);
                 if (isGotoLine) {
@@ -1731,29 +1732,28 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 }
             })
             .onUpdate(function () {
-                that.toolhead.position.x = this.x;
-                that.toolhead.position.y = this.y;
-                that.toolhead.position.z = this.z;
+                console.log(this._object);
+                if (this._object) {
+                    that.toolhead.position.x = this._object.x;
+                    that.toolhead.position.y = this._object.y;
+                    that.toolhead.position.z = this._object.z;
 
-                if (this.showShadow) {
-                    that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
-                    that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
-                }
+                    if (this.showShadow) {
+                        that.toolhead.children[0].target.position.set(this._object.x, this._object.y, that.toolhead.position.z);
+                        that.toolhead.children[1].target.position.set(this._object.x, this._object.y, that.toolhead.position.z);
+                    }
                 
-                that.lookAtToolHead();
+                    that.lookAtToolHead();
+                } else {
+                    //console.log('WTF', this);
+                }
             });
-            
-            
             
             this.tween = curTween;
             this.tween.start();
         },
 
         playSampleRun: function (evt) {
-            console.log("controls:", this.controls);
-
-            // TODO: fix
-            //this.animNoSleep();
             $('.com-chilipeppr-widget-3d-menu-samplerun').prop('disabled', true);
             $('.com-chilipeppr-widget-3d-menu-samplerun').popover('hide');
             $('.com-chilipeppr-widget-3d-menu-samplerunstop').prop('disabled', false);
@@ -1777,26 +1777,28 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 y: 0,
                 z: 0
             })
-                .to({
+            .to({
                 x: 0,
                 y: 0,
                 z: 0
             }, 20)
             .easing(TWEEN.Easing.Quadratic.InOut)
             .onComplete(function () {
+                console.log('next tween');
                 that.playNextTween();
             })
             .onUpdate(function () {
-                that.toolhead.position.x = this.x;
-                that.toolhead.position.y = this.y;
-                that.toolhead.position.z = this.z;
+                if (this._object) {
+                    that.toolhead.position.x = this._object.x;
+                    that.toolhead.position.y = this._object.y;
+                    that.toolhead.position.z = this._object.z;
                 
-                // update where shadow casting light is looking
-                if (this.showShadow) {
-                    that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
-                    that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
+                    // update where shadow casting light is looking
+                    if (this.showShadow) {
+                        that.toolhead.children[0].target.position.set(this._object.x, this._object.y, that.toolhead.position.z);
+                        that.toolhead.children[1].target.position.set(this._object.x, this._object.y, that.toolhead.position.z);
+                    } 
                 }
-                
             });
 
             this.tween = tween;
@@ -1898,7 +1900,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             // Create X axis extents sprite
             var z = 0;
+            
             var offsetFromY = this.getUnitVal(-4); // this means we'll be below the object by this padding
+            
             var lenOfLine = this.getUnitVal(5);
             
             var minx = box.min.x;
@@ -2009,11 +2013,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             // Add estimated time and distance
             var ud = this.parsedLines;
-            var udLastLine = ud[ud.length-1].p2;
+            var udLastLine = ud[ud.length - 1].p2;
             
             // get pretty print of time
             var ret = this.convertMinsToPrettyDuration(udLastLine.timeMinsSum);
-            
             
             var txt = "Estimated Time: " + ret + ","
             + " Total Distance: " + (udLastLine.distSum).toFixed(2);
@@ -2529,8 +2532,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
          * Special handler:
          *   'default': Called if no other handler matches.
          */
-        GCodeParser: function (handlers) {
+        GCodeParser: function (handlers, modecmdhandlers) {
             this.handlers = handlers || {};
+            this.modecmdhandlers = modecmdhandlers || {};
             
             this.lastArgs = {cmd: null};
             this.lastFeedrate = null;
@@ -2569,9 +2573,23 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     text = text.replace(/(;|\().*$/, ""); // ; or () trailing
                     //text = text.replace(/\(.*$/, ""); // () trailing
                     
-                    var tokens = text.split(/\s+/);
-                    //console.log("tokens:", tokens);
-                    if (tokens) {
+                    var tokens = [];
+                    
+                    // Execute any non-motion commands on the line immediately
+                    // Add other commands to the tokens list for later handling
+                    // Segments are not created for non-motion commands;
+                    // the segment for this line is created later
+                    
+                    text.split(/\s+/).forEach(function (token) {
+                        var modehandler = modecmdhandlers[token.toUpperCase()];
+                        if (modehandler) {
+                            modehandler();
+                        } else {
+                            tokens.push(token);
+                        }
+                    });
+                    
+                    if (tokens.length) {
                         var cmd = tokens[0];
                         cmd = cmd.toUpperCase();
                         // check if a g or m cmd was included in gcode line
@@ -2580,14 +2598,14 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // cmd is what's assumed
                         isComment = false;
                         if (!cmd.match(/^(G|M|T)/i)) {
-                            //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
-                            // we need to use the last gcode cmd
                             cmd = this.lastArgs.cmd;
-                            tokens.unshift(cmd); // put at spot 0 in array
+                            tokens.unshift(cmd);
                         } else {
+                            
                             // we have a normal cmd as opposed to just an xyz pos where
                             // it assumes you should use the last cmd
                             // however, need to remove inline comments (TODO. it seems parser works fine for now)
+                            
                         }
                         
                         var args = {
@@ -2614,8 +2632,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                 }
                             });
                         }
+                        
                         var handler = this.handlers[cmd] || this.handlers['default'];
-
+                        
                         // don't save if saw a comment
                         if (!args.isComment) {
                             this.lastArgs = args;
@@ -2649,7 +2668,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                 // use feedrate from prior lines
                                 args.feedrate = this.lastFeedrate;
                             }
-                            
+                                                        
                             return handler(args, info, this);
                         } else {
                             console.error("No handler for gcode command!!!");
@@ -2842,7 +2861,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 var p2deltaY = vpArc.y - vp2.y; 
                 var p2deltaZ = vpArc.z - vp2.z;
 
-                switch (args.plane) {
+                switch (args.plane){
                     case "G18":
                         var anglepArcp1 = Math.atan(p1deltaZ / p1deltaX);
                         var anglepArcp2 = Math.atan(p2deltaZ / p2deltaX);
@@ -2860,6 +2879,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 var radius = vpArc.distanceTo(vp1);
                 var radius2 = vpArc.distanceTo(vp2);
                 
+                //console.log("radius:", radius);
+                
                 if (Number((radius).toFixed(2)) != Number((radius2).toFixed(2))) {
                     console.log("Radiuses not equal. r1:", radius, ", r2:", radius2, " with args:", args, " rounded vals r1:", Number((radius).toFixed(2)), ", r2:", Number((radius2).toFixed(2)));
                 }
@@ -2867,7 +2888,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 // arccurve
                 var clwise = true;
                 if (args.clockwise === false) clwise = false;
-
+                
+                
                 switch (args.plane) {
                     case "G19":
                         if (p1deltaY >= 0) anglepArcp1 += Math.PI;
@@ -2908,6 +2930,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             };
             
             this.addSegment = function(p1, p2, args) {
+                
                 var group = this.getLineGroup(p2, args);
                 var geometry = group.geometry;
 
@@ -2923,6 +2946,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // don't have to calculate it. however we need to determine center
                     // of arc
                     if (args.r != null) {
+                        //console.log("looks like we have an arc with R specified. args:", args);
+                        //console.log("anglepArcp1:", anglepArcp1, "anglepArcp2:", anglepArcp2);
+
                         radius = parseFloat(args.r);
                         
                         // First, find the distance between points 1 and 2.  We'll call that q, 
@@ -2946,7 +2972,15 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         // y = y3 - sqrt(r^2-(q/2)^2)*(x2-x1)/q  
                         var pArc_1 = undefined;
                         var pArc_2 = undefined;
+                        
                         var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
+                        
+                        // calc can be NaN if q/2 is epsilon larger than radius due to finite precision
+                        // When that happens, the calculated center is incorrect
+                        if (isNaN(calc)) {
+                            calc = 0.0;
+                        }
+                        
                         var angle_point = undefined;
                         
                         switch (args.plane) {
@@ -2960,12 +2994,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                     y: y3 - calc * (p2.y - p1.y) / q, 
                                     z: z3 - calc * (p2.x - p1.x) / q };
                                 angle_point = Math.atan2(p1.z, p1.x) - Math.atan2(p2.z, p2.x);
-                                if(((p1.x-pArc_1.x)*(p1.z+pArc_1.z))+((pArc_1.x-p2.x)*(pArc_1.z+p2.z)) >= 
+                                if (((p1.x-pArc_1.x)*(p1.z+pArc_1.z))+((pArc_1.x-p2.x)*(pArc_1.z+p2.z)) >= 
                                    ((p1.x-pArc_2.x)*(p1.z+pArc_2.z))+((pArc_2.x-p2.x)*(pArc_2.z+p2.z))){
                                     var cw = pArc_1;
                                     var ccw = pArc_2;
-                                }
-                                else{
+                                } else {
                                     var cw = pArc_2;
                                     var ccw = pArc_1;
                                 }
@@ -2980,12 +3013,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                     y: y3 - calc * (p1.z - p2.z) / q, 
                                     z: z3 - calc * (p2.y - p1.y) / q };
                                 
-                                if(((p1.y-pArc_1.y)*(p1.z+pArc_1.z))+((pArc_1.y-p2.y)*(pArc_1.z+p2.z)) >= 
+                                if (((p1.y-pArc_1.y)*(p1.z+pArc_1.z))+((pArc_1.y-p2.y)*(pArc_1.z+p2.z)) >= 
                                    ((p1.y-pArc_2.y)*(p1.z+pArc_2.z))+((pArc_2.y-p2.y)*(pArc_2.z+p2.z))){
                                     var cw = pArc_1;
                                     var ccw = pArc_2;
-                                }
-                                else{
+                                } else {
                                     var cw = pArc_2;
                                     var ccw = pArc_1;
                                 }
@@ -2999,12 +3031,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                                     x: x3 - calc * (p1.y - p2.y) / q,
                                     y: y3 - calc * (p2.x - p1.x) / q, 
                                     z: z3 - calc * (p2.z - p1.z) / q };
-                                if(((p1.x-pArc_1.x)*(p1.y+pArc_1.y))+((pArc_1.x-p2.x)*(pArc_1.y+p2.y)) >= 
+                                if (((p1.x-pArc_1.x)*(p1.y+pArc_1.y))+((pArc_1.x-p2.x)*(pArc_1.y+p2.y)) >= 
                                    ((p1.x-pArc_2.x)*(p1.y+pArc_2.y))+((pArc_2.x-p2.x)*(pArc_2.y+p2.y))){
                                     var cw = pArc_1;
                                     var ccw = pArc_2;
-                                }
-                                else{
+                                } else {
                                     var cw = pArc_2;
                                     var ccw = pArc_1;
                                 }
@@ -3022,7 +3053,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             y: p2.arcj ? p1.y + p2.arcj : p1.y,
                             z: p2.arck ? p1.z + p2.arck : p1.z,
                         };
-                        
+
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
                     }
                     
@@ -3108,25 +3139,29 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 if (p2.arc) {
                     // calc dist of all lines
                     var arcGeo = new THREE.Geometry().fromBufferGeometry(p2.threeObjArc.geometry);
+                    //console.log("arcGeo:", arcGeo);
                                         
                     var tad2 = 0;
                     for (var arcLineCtr = 0; arcLineCtr < arcGeo.vertices.length - 1; arcLineCtr++) {
                         tad2 += arcGeo.vertices[arcLineCtr].distanceTo(arcGeo.vertices[arcLineCtr+1]);
-                    }
+                    }                    
                     
                     // just do straight line calc
                     var a = new THREE.Vector3( p1.x, p1.y, p1.z );
                     var b = new THREE.Vector3( p2.x, p2.y, p2.z );
                     var straightDist = a.distanceTo(b);
-                                        
+                    
                     dist = tad2;
                     
                 } else {
                     // just do straight line calc
                     var a = new THREE.Vector3( p1.x, p1.y, p1.z );
                     var b = new THREE.Vector3( p2.x, p2.y, p2.z );
-                    
                     dist = a.distanceTo(b);
+                }
+                
+                if (dist > 0) {
+                    this.totalDist += dist;
                 }
                 
                 if (dist > 0) {
@@ -3184,7 +3219,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.absolute = function (v1, v2) {
                 return relative ? v1 + v2 : v2;
             }
-
+            
+            var ijkrelative = false;  // For Mach3 Arc IJK Absolute mode
+            
+            this.ijkabsolute = function (v1, v2) {
+                return ijkrelative ? v1 + v2 : v2;
+            }
+            
             this.addFakeSegment = function(args) {
                 console.log('Fake segment', args);
                 
@@ -3211,6 +3252,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 as fast as possible which means no milling or extruding is happening in G0.
                 So, let's color it uniquely to indicate it's just a toolhead move. */
                 G0: function (args, indx) {
+                    //G1.apply(this, args, line, 0x00ff00);
+                    //console.log("G0", args);
                     var newLine = {
                         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
                         y: args.y !== undefined ? cofg.absolute(lastLine.y, args.y) + cofg.offsetG92.y : lastLine.y,
@@ -3218,11 +3261,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
                     };
-                    
                     newLine.g0 = true;
+                    //cofg.newLayer(newLine);
                     
                     cofg.addSegment(lastLine, newLine, args);
-                    
+                    //console.log("G0", lastLine, newLine, args, cofg.offsetG92);
                     lastLine = newLine;
                 },  
                 G1: function (args, indx) {
@@ -3239,17 +3282,14 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-
                     };
                     
-                    /* layer change detection is or made by watching Z, it's made by 
-                    watching when we extrude at a new Z position */
+                    /* layer change detection is or made by watching Z, it's made by watching when we extrude at a new Z position */
                     if (cofg.delta(lastLine.e, newLine.e) > 0) {
                         newLine.extruding = cofg.delta(lastLine.e, newLine.e) > 0;
                         if (layer == undefined || newLine.z != layer.z) cofg.newLayer(newLine);
                     }
                     cofg.addSegment(lastLine, newLine, args);
-                    
                     lastLine = newLine;
                 },
                 G2: function (args, indx, gcp) {
@@ -3258,21 +3298,39 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     arc itself by figuring out the sub-segments . */
                     args.plane = plane; //set the plane for this command to whatever the current plane is
                     
+                    var arci;
+                    var arcj;
+                    var arck;
+                    
+                    if (!ijkrelative) {
+                        arci = args.i ? args.i : null;
+                        arcj = args.j ? args.j : null;
+                        arck = args.k ? args.k : null; 
+                    } else {
+                        arci = args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : lastLine.x;
+                        arcj = args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : lastLine.y;
+                        arck = args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : lastLine.z;
+                    }
+                    
                     var newLine = {
                         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
                         y: args.y !== undefined ? cofg.absolute(lastLine.y, args.y) + cofg.offsetG92.y : lastLine.y,
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-                        arci: args.i ? args.i : null,
-                        arcj: args.j ? args.j : null,
-                        arck: args.k ? args.k : null,
+                        arci: arci,
+                        arcj: arcj,
+                        arck: arck,
                         arcr: args.r ? args.r : null,
                     };
-                    
+                   
                     newLine.arc = true;
                     newLine.clockwise = true;
-                    if (args.clockwise === false) newLine.clockwise = args.clockwise;
+                    
+                    if (args.clockwise === false) {
+                        newLine.clockwise = args.clockwise;
+                    }
+                    
                     cofg.addSegment(lastLine, newLine, args);
                     
                     lastLine = newLine;
@@ -3285,96 +3343,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     gcp.handlers.G2(args, indx, gcp);
                 },
 
-                G17: function (args, indx, gcp){
-                    console.log("SETTING XY PLANE", args);
-                    plane = "G17";
-                    
-                    if (args.origtext.length > 5) {
-                       var line = args.origtext.replace('G17', ''); 
-                       
-                       if (line != args.origtext) {
-                           parser.parseLine(line);
-                       }
-                    } else {
-                        cofg.addFakeSegment(args);
-                    }
-                },
-
-                G18: function (args, indx, gcp){
-                    console.log("SETTING XZ PLANE", args);
-                    plane = "G18";
-                    
-                    if (args.origtext.length > 5) {
-                       var line = args.origtext.replace('G18', ''); 
-                       
-                       if (line != args.origtext) {
-                           parser.parseLine(line);
-                       }
-                    } else {
-                        cofg.addFakeSegment(args);
-                    }
-                },
-
-                G19: function (args, indx, gcp){
-                    console.log("SETTING YZ PLANE", args, indx);
-                    plane = "G19";
-                    
-                    if (args.origtext.length > 5) {
-                       var line = args.origtext.replace('G19', ''); 
-                       
-                       if (line != args.origtext) {
-                           parser.parseLine(line);
-                       }
-                    } else {
-                        cofg.addFakeSegment(args);
-                    }
-                },
-
-                G20: function (args) {
-                    // G21: Set Units to Inches
-                    // We don't really have to do anything since 3d viewer is unit agnostic
-                    // However, we need to set a global property so the trinket decorations
-                    // like toolhead, axes, grid, and extent labels are scaled correctly
-                    // later on when they are drawn after the gcode is rendered
-                    console.log("SETTING UNITS TO INCHES!!!");
-                    cofg.isUnitsMm = false; // false means inches cuz default is mm
-                    cofg.addFakeSegment(args);
-
-                },
-
-                G21: function (args) {
-                    // G21: Set Units to Millimeters
-                    // Example: G21
-                    // Units from now on are in millimeters. (This is the RepRap default.)
-                    console.log("SETTING UNITS TO MM!!!");
-                    cofg.isUnitsMm = true; // true means mm
-                    cofg.addFakeSegment(args);
-
-                },
-
                 G73: function(args, indx, gcp) {
                     // peck drilling. just treat as g1
                     console.log("G73 gcp:", gcp);
                     gcp.handlers.G1(args);
-                },
-                G90: function (args) {
-                    // G90: Set to Absolute Positioning
-                    // Example: G90
-                    // All coordinates from now on are absolute relative to the
-                    // origin of the machine. (This is the RepRap default.)
-
-                    relative = false;
-                    cofg.addFakeSegment(args);
-                },
-
-                G91: function (args) {
-                    // G91: Set to Relative Positioning
-                    // Example: G91
-                    // All coordinates from now on are relative to the last position.
-
-                    // TODO!
-                    relative = true;
-                    cofg.addFakeSegment(args);
                 },
 
                 G92: function (args) { // E0
@@ -3392,21 +3364,143 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     cofg.offsetG92.y = (args.y !== undefined ? (args.y === 0 ? newLine.y : newLine.y - args.y) : 0);
                     cofg.offsetG92.z = (args.z !== undefined ? (args.z === 0 ? newLine.z : newLine.z - args.z) : 0);
                     cofg.offsetG92.e = (args.e !== undefined ? (args.e === 0 ? newLine.e : newLine.e - args.e) : 0);
+
+                    //newLine.x = args.x !== undefined ? args.x + newLine.x : newLine.x;
+                    //newLine.y = args.y !== undefined ? args.y + newLine.y : newLine.y;
+                    //newLine.z = args.z !== undefined ? args.z + newLine.z : newLine.z;
+                    //newLine.e = args.e !== undefined ? args.e + newLine.e : newLine.e;
                     
+                    //console.log("G92", lastLine, newLine, args, cofg.offsetG92);
+                    
+                    //lastLine = newLine;
                     cofg.addFakeSegment(args);
                 },
                 M30: function (args) {
                     cofg.addFakeSegment(args);
                 },
-                M82: function (args) {
+
+                'default': function (args, info) {
+                    //if (!args.isComment)
+                    //    console.log('Unknown command:', args.cmd, args, info);
+                    cofg.addFakeSegment(args);
+                },
+            },
+            // Mode-setting non-motion commands, of which many may appear on one line
+            // These take no arguments
+            {
+                G17: function () {
+                    console.log("SETTING XY PLANE");
+                    plane = "G17";
+                },
+
+                G18: function () {
+                    console.log("SETTING XZ PLANE");
+                    plane = "G18";
+                },
+
+                G19: function () {
+                    console.log("SETTING YZ PLANE");
+                    plane = "G19";
+                },
+
+                G20: function () {
+                    // G21: Set Units to Inches
+                    // We don't really have to do anything since 3d viewer is unit agnostic
+                    // However, we need to set a global property so the trinket decorations
+                    // like toolhead, axes, grid, and extent labels are scaled correctly
+                    // later on when they are drawn after the gcode is rendered
+                    console.log("SETTING UNITS TO INCHES!!!");
+                    cofg.isUnitsMm = false; // false means inches cuz default is mm
+                },
+
+                G21: function () {
+                    // G21: Set Units to Millimeters
+                    // Example: G21
+                    // Units from now on are in millimeters. (This is the RepRap default.)
+                    console.log("SETTING UNITS TO MM!!!");
+                    cofg.isUnitsMm = true; // true means mm
+                },
+
+                // A bunch of no-op modes that do not affect the viewer
+                G40: function () {}, // Tool radius compensation off
+                G41: function () {}, // Tool radius compensation left
+                G42: function () {}, // Tool radius compensation right
+                G45: function () {}, // Axis offset single increase
+                G46: function () {}, // Axis offset single decrease
+                G47: function () {}, // Axis offset double increase
+                G48: function () {}, // Axis offset double decrease
+                G49: function () {}, // Tool length offset compensation cancle
+                G54: function () {}, // Select work coordinate system 1
+                G55: function () {}, // Select work coordinate system 2
+                G56: function () {}, // Select work coordinate system 3
+                G57: function () {}, // Select work coordinate system 4
+                G58: function () {}, // Select work coordinate system 5
+                G59: function () {}, // Select work coordinate system 6
+                G61: function () {}, // Exact stop check mode
+                G64: function () {}, // Cancel G61
+                G69: function () {}, // Cancel G68
+
+                G90: function () {
+                    // G90: Set to Absolute Positioning
+                    // Example: G90
+                    // All coordinates from now on are absolute relative to the
+                    // origin of the machine. (This is the RepRap default.)
+                    relative = false;
+                },
+
+                'G90.1': function () {
+                    // G90.1: Set to Arc Absolute IJK Positioning
+                    // Example: G90.1
+                    // From now on, arc centers are specified directly by
+                    // the IJK parameters, e.g. center_x = I_value
+                    // This is Mach3-specific
+                    ijkrelative = false;
+                },
+
+                G91: function () {
+                    // G91: Set to Relative Positioning
+                    // Example: G91
+                    // All coordinates from now on are relative to the last position.
+                    relative = true;
+                },
+
+                'G91.1': function () {
+                    // G91.1: Set to Arc Relative IJK Positioning
+                    // Example: G91.1
+                    // From now on, arc centers are relative to the starting
+                    // coordinate, e.g. center_x = this_x + I_value
+                    // This is the default, and the only possibility for most
+                    // controllers other than Mach3
+                    ijkrelative = true;
+                },
+
+                // No-op modal macros that do not affect the viewer
+                M07: function () {}, // Coolant on (mist)
+                M08: function () {}, // Coolant on (flood)
+                M09: function () {}, // Coolant off
+                M10: function () {}, // Pallet clamp on
+                M11: function () {}, // Pallet clamp off
+                M21: function () {}, // Mirror X axis
+                M22: function () {}, // Mirror Y axis
+                M23: function () {}, // Mirror off
+                M24: function () {}, // Thread pullout gradual off
+                M41: function () {}, // Select gear 1
+                M42: function () {}, // Select gear 2
+                M43: function () {}, // Select gear 3
+                M44: function () {}, // Select gear 4
+                M48: function () {}, // Allow feedrate override
+                M49: function () {}, // Disallow feedrate override
+                M52: function () {}, // Empty spindle
+                M60: function () {}, // Automatic pallet change
+
+                M82: function () {
                     // M82: Set E codes absolute (default)
                     // Descriped in Sprintrun source code.
 
                     // No-op, so long as M83 is not supported.
-                    cofg.addFakeSegment(args);
                 },
 
-                M84: function (args) {
+                M84: function () {
                     // M84: Stop idle hold
                     // Example: M84
                     // Stop the idle hold on all axis and extruder. In some cases the
@@ -3416,13 +3510,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // in between or after printjobs.
 
                     // No-op
-                    cofg.addFakeSegment(args);
-                },
-
-                'default': function (args, info) {
-                    //if (!args.isComment)
-                    //    console.log('Unknown command:', args.cmd, args, info);
-                    cofg.addFakeSegment(args);
                 },
             });
 
@@ -3439,16 +3526,18 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             var scale = 1; // TODO: Auto size
 
             var center = new THREE.Vector3(
-            bbbox.min.x + ((bbbox.max.x - bbbox.min.x) / 2),
-            bbbox.min.y + ((bbbox.max.y - bbbox.min.y) / 2),
-            bbbox.min.z + ((bbbox.max.z - bbbox.min.z) / 2));
+                bbbox.min.x + ((bbbox.max.x - bbbox.min.x) / 2),
+                bbbox.min.y + ((bbbox.max.y - bbbox.min.y) / 2),
+                bbbox.min.z + ((bbbox.max.z - bbbox.min.z) / 2)
+            );
             
             console.log("center ", center);
 
             this.sceneCenter = new THREE.Vector3(
-            this.sceneBoundaries.min.x + ((this.sceneBoundaries.max.x - this.sceneBoundaries.min.x) / 2),
-            this.sceneBoundaries.min.y + ((this.sceneBoundaries.max.y - this.sceneBoundaries.min.y) / 2),
-            this.sceneBoundaries.min.z + ((this.sceneBoundaries.max.z - this.sceneBoundaries.min.z) / 2));
+                this.sceneBoundaries.min.x + ((this.sceneBoundaries.max.x - this.sceneBoundaries.min.x) / 2),
+                this.sceneBoundaries.min.y + ((this.sceneBoundaries.max.y - this.sceneBoundaries.min.y) / 2),
+                this.sceneBoundaries.min.z + ((this.sceneBoundaries.max.z - this.sceneBoundaries.min.z) / 2)
+            );
             
             console.log("final object:", object);
 
