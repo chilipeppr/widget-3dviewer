@@ -1078,6 +1078,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         
         request3dObject: function() {
             console.log("request3dObject");
+            // backwards compat HAX
+            this.object.userData.lines = this.parsedLines;
+            
             // we need to publish back the object
             chilipeppr.publish("/" + this.id + "/recv3dObject", this.object, {'scene': this.scene, 'camera': this.camera, 'toolhead': this.toolhead, 'widget': this });
         },
@@ -3024,7 +3027,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 
                 gcodeObj.userData.p2 = p2;
                 gcodeObj.userData.args = args;
-                gcodeObj.userData.lines = this.parsedLines;
+                //gcodeObj.userData.lines = this.parsedLines;
                 
                 // DISTANCE CALC
                 // add distance so we can calc estimated time to run
@@ -3052,10 +3055,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     var a = new THREE.Vector3( p1.x, p1.y, p1.z );
                     var b = new THREE.Vector3( p2.x, p2.y, p2.z );
                     dist = a.distanceTo(b);
-                }
-                
-                if (dist > 0) {
-                    this.totalDist += dist;
                 }
                 
                 if (dist > 0) {
