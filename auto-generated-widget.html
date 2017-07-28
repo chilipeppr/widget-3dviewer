@@ -3266,6 +3266,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     //cofg.newLayer(newLine);
                     
                     cofg.addSegment(lastLine, newLine, args);
+                    
                     //console.log("G0", lastLine, newLine, args, cofg.offsetG92);
                     lastLine = newLine;
                 },  
@@ -3290,14 +3291,17 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         newLine.extruding = cofg.delta(lastLine.e, newLine.e) > 0;
                         if (layer == undefined || newLine.z != layer.z) cofg.newLayer(newLine);
                     }
+                    
                     cofg.addSegment(lastLine, newLine, args);
+                    
                     lastLine = newLine;
                 },
                 G2: function (args, indx, gcp) {
                     /* this is an arc move from lastLine's xy to the new xy. we'll
                     show it as a light gray line, but we'll also sub-render the
                     arc itself by figuring out the sub-segments . */
-                    args.plane = plane; //set the plane for this command to whatever the current plane is
+                    
+                    //args.plane = plane; //set the plane for this command to whatever the current plane is
                     
                     var newLine = {
                         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
