@@ -3184,7 +3184,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     plane = "G17";
                     
                     if (args.origtext.length > 5) {
-                       var line = args.origtext.replace('G17 ', ''); 
+                       var line = args.origtext.replace('G17', ''); 
                        parser.parseLine(line);
                     } else {
                         cofg.addFakeSegment(args);
@@ -3196,7 +3196,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     plane = "G18";
                     
                     if (args.origtext.length > 5) {
-                       var line = args.origtext.replace('G18 ', ''); 
+                       var line = args.origtext.replace('G18', ''); 
                        parser.parseLine(line);
                     } else {
                         cofg.addFakeSegment(args);
@@ -3208,7 +3208,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     plane = "G19";
                     
                     if (args.origtext.length > 5) {
-                       var line = args.origtext.replace('G19 ', ''); 
+                       var line = args.origtext.replace('G19', ''); 
                        parser.parseLine(line);
                     } else {
                         cofg.addFakeSegment(args);
