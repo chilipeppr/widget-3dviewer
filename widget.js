@@ -1078,8 +1078,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         
         request3dObject: function() {
             console.log("request3dObject");
+            
             // backwards compat HAX
-            this.object.userData.lines = this.parsedLines;
+            if (this.object && this.object.userData) {
+                this.object.userData.lines = this.parsedLines;
+            }
             
             // we need to publish back the object
             chilipeppr.publish("/" + this.id + "/recv3dObject", this.object, {'scene': this.scene, 'camera': this.camera, 'toolhead': this.toolhead, 'widget': this });
