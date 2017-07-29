@@ -2381,6 +2381,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.animate();
         },
         
+        wakeAnimate: function() {
+            // Backwards compat
+            this.animate();
+        },
+        
         animate: function() {
             var that = this;
             
