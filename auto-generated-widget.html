@@ -110,7 +110,7 @@
 // ChiliPeppr Widget/Element Javascript
 requirejs.config({
     paths: {
-        Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r86/three',
+        Three: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/86/three',
         
         ThreeTrackballControls: 'https://cdn.rawgit.com/mrdoob/three.js/dev/examples/js/controls/TrackballControls',
         ThreeTween: 'https://cdn.rawgit.com/tweenjs/tween.js/master/src/Tween',
@@ -232,7 +232,7 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
 } /*end_test*/ );
 
 // Bring THREE in to global scope
-cpdefine('Three', ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.js'], function ( THREE ) {
+cpdefine('Three', ['https://cdnjs.cloudflare.com/ajax/libs/three.js/86/three.js'], function ( THREE ) {
     if (typeof window !== 'undefined') {
         window.THREE = THREE;
         return THREE;
