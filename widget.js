@@ -2946,9 +2946,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         
                     } else {
                         var pArc = {
-                            x: p2.arci ? p1.x + p2.arci : p1.x,
-                            y: p2.arcj ? p1.y + p2.arcj : p1.y,
-                            z: p2.arck ? p1.z + p2.arck : p1.z,
+                            x: p2.arci,
+                            y: p2.arcj,
+                            z: p2.arck
                         };
 
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
@@ -3203,9 +3203,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-                        arci: args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : null,
-                        arcj: args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : null,
-                        arck: args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : null,
+                        arci: args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : lastline.x,
+                        arcj: args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : lastline.y,
+                        arck: args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : lastline.z,
                         arcr: args.r ? args.r : null,
                     };
                    
