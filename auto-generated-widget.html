@@ -3222,7 +3222,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 return relative ? v1 + v2 : v2;
             }
             
-            var ijkrelative = false;  // For Mach3 Arc IJK Absolute mode
+            var ijkrelative = true;  // For Mach3 Arc IJK Absolute mode
             this.ijkabsolute = function (v1, v2) {
                 return ijkrelative ? v1 + v2 : v2;
             }
@@ -3309,9 +3309,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-                        arci: args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : lastline.x,
-                        arcj: args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : lastline.y,
-                        arck: args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : lastline.z,
+                        arci: args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : lastLine.x,
+                        arcj: args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : lastLine.y,
+                        arck: args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : lastLine.z,
                         arcr: args.r ? args.r : null,
                     };
                    
