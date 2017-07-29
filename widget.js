@@ -1112,6 +1112,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             }
         },
         sceneClear: function() {
+            console.log('scene clear');
+            
             this.stopSampleRun();
             // TODO: wakeAnimate change
             this.animate();
