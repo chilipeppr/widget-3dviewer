@@ -1115,10 +1115,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             console.log('scene clear');
             
             this.stopSampleRun();
-            // TODO: wakeAnimate change
-            this.animate();
+
             this.object.children = [];
             this.sceneRemove(this.decorate);
+            
+            this.animate();
         },
         
         
@@ -1920,21 +1921,22 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // get pretty print of time
             var ret = this.convertMinsToPrettyDuration(udLastLine.timeMinsSum);
             
-            var txt = "Estimated Time: " + ret + ","
-            + " Total Distance: " + (udLastLine.distSum).toFixed(2);
-            txt = (this.isUnitsMm) ? txt + " mm" : txt + " in";
+            if (udLastLine.distSum) {
+                var txt = "Estimated Time: " + ret + "," + " Total Distance: " + (udLastLine.distSum).toFixed(2);
+                txt = (this.isUnitsMm) ? txt + " mm" : txt + " in";
+                
+                var txtTimeDist = this.makeText({
+                    x: minx + this.getUnitVal(1),
+                    y: miny + offsetFromY - lenOfLine - this.getUnitVal(6),
+                    z: z,
+                    text: txt,
+                    color: color,
+                    opacity: 0.3,
+                    size: this.getUnitVal(2)
+                });
             
-            var txtTimeDist = this.makeText({
-                x: minx + this.getUnitVal(1),
-                y: miny + offsetFromY - lenOfLine - this.getUnitVal(6),
-                z: z,
-                text: txt,
-                color: color,
-                opacity: 0.3,
-                size: this.getUnitVal(2)
-            });
-            
-            this.decorate.add(txtTimeDist);
+                this.decorate.add(txtTimeDist);
+            }
             
             this.sceneAdd(this.decorate);
             console.log("just added decoration:", this.decorate);
