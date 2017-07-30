@@ -1615,6 +1615,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             console.log("parsedLines:", lines[data.line]);
             
             var curLine = lines[data.line];
+            
+            if (!curLine.p2) {
+                console.log('no p2 defined for current line:', curLine);
+                return;
+            }
+            
             var curPt = curLine.p2;
             
             console.log("p2 for toolhead move. curPt:", curPt);
