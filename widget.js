@@ -1045,6 +1045,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // we need to publish back the units
             var units = "mm";
             if (!this.isUnitsMm) units = "inch";
+            console.log("SETTING CHANGED " + units)
             chilipeppr.publish("/" + this.id + "/unitsChanged", units);
             $('.com-chilipeppr-widget-3dviewer-units-indicator').text(units);
         },
