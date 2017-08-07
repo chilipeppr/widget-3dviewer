@@ -1742,6 +1742,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         decorate: null, // stores the decoration 3d objects
         decorateExtents: function() {
+            
             // remove grid if drawn previously
             if (this.decorate != null) {
                 console.log("there was a previous extent decoration. remove it. grid:", this.decorate);
@@ -2820,7 +2821,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             this.lastArgs = {cmd: null};
             this.lastFeedrate = null;
-
+            
             this.parseLine = function (text, info) {
                 //text = text.replace(/;.*$/, '').trim(); // Remove comments
                 //text = text.replace(/\(.*$/, '').trim(); // Remove comments
