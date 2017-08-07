@@ -3741,7 +3741,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // like toolhead, axes, grid, and extent labels are scaled correctly
                     // later on when they are drawn after the gcode is rendered
                     console.log("SETTING UNITS TO INCHES!!!");
-                    cofg.isUnitsMm = false; // false means inches cuz default is mm
+                    isUnitsMm = false; // false means inches cuz default is mm
+                    //setUnits("inch");
                 },
 
                 G21: function () {
@@ -3749,7 +3750,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // Example: G21
                     // Units from now on are in millimeters. (This is the RepRap default.)
                     console.log("SETTING UNITS TO MM!!!");
-                    cofg.isUnitsMm = true; // true means mm
+                    isUnitsMm = true; // true means mm
+                    //setUnits("mm");
                 },
 
                 // A bunch of no-op modes that do not affect the viewer
