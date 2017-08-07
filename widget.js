@@ -3854,7 +3854,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             // set what units we're using in the gcode
             //console.log('setting units from parser to 3dviewer. parser:', parser, "this:", this);
-            console.log('SETTING units from parser to 3dviewer. parser:', parser, "this:", this);
+            console.log('SETTING units from parser to 3dviewer. parser:', parser, "this:", this, "cofg: ", cofg);
             this.isUnitsMm = parser.isUnitsMm;
             
             console.log("inside creatGcodeFromObject. this:", this);
