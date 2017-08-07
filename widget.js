@@ -1049,7 +1049,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             console.log("SETTING CHANGED " + units + this.isUnitsMm);
             chilipeppr.publish("/" + this.id + "/unitsChanged", units);
             $('.com-chilipeppr-widget-3dviewer-units-indicator').text(units);
-            console.log("SETTING OUT " + units + " " + this.isUnitsMm + " " + cofg.isUnitsMM);
+            console.log("SETTING OUT " + units + " " + this.isUnitsMm + " " + this);
         },
         request3dObject: function() {
             console.log("request3dObject");
