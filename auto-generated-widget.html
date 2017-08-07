@@ -1135,7 +1135,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 this.isUnitsMm = true;
             else
                 this.isUnitsMm = false;
-            console.log("SETTING setUnits");
             this.onUnitsChanged();
         },
         requestUnits: function() {
@@ -1150,10 +1149,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // we need to publish back the units
             var units = "mm";
             if (!this.isUnitsMm) units = "inch";
-            console.log("SETTING CHANGED " + units + this.isUnitsMm);
             chilipeppr.publish("/" + this.id + "/unitsChanged", units);
             $('.com-chilipeppr-widget-3dviewer-units-indicator').text(units);
-            console.log("SETTING OUT " + units + " " + this.isUnitsMm + " " + this.id);
         },
         request3dObject: function() {
             console.log("request3dObject");
@@ -2115,7 +2112,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // these are drawn after the gcode is rendered now
             // so we can see if in inch or mm mode
             // these items scale based on that mode
-            console.log("SETTING 1 " + this.isUnitsMm);
             this.drawToolhead();
             this.drawGrid();
             this.drawExtentsLabels();
@@ -2929,9 +2925,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             this.lastArgs = {cmd: null};
             this.lastFeedrate = null;
-            console.log("SETTING initting");
-            this.isUnitsMm = true;
-            
+
             this.parseLine = function (text, info) {
                 //text = text.replace(/;.*$/, '').trim(); // Remove comments
                 //text = text.replace(/\(.*$/, '').trim(); // Remove comments
@@ -3849,8 +3843,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // However, we need to set a global property so the trinket decorations
                     // like toolhead, axes, grid, and extent labels are scaled correctly
                     // later on when they are drawn after the gcode is rendered
-                    console.log("SETTING UNITS TO INCHES!!!");
-                    //isUnitsMm = false; // false means inches cuz default is mm
                     cofg.setUnits("inch");
                 },
 
@@ -3858,8 +3850,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // G21: Set Units to Millimeters
                     // Example: G21
                     // Units from now on are in millimeters. (This is the RepRap default.)
-                    console.log("SETTING UNITS TO MM!!!");
-                    //isUnitsMm = true; // true means mm
                     cofg.setUnits("mm");
                 },
 
@@ -3957,11 +3947,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             parser.parse(gcode);
 
-            // set what units we're using in the gcode
-            //console.log('setting units from parser to 3dviewer. parser:', parser, "this:", this);
-            console.log('SETTING units from parser to 3dviewer. parser:', parser, "this:", this, "cofg: ", cofg);
-            this.isUnitsMm = parser.isUnitsMm;
-            
             console.log("inside creatGcodeFromObject. this:", this);
 
             console.log("Layer Count ", layers.length);
