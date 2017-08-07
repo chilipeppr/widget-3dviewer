@@ -2012,9 +2012,13 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // these are drawn after the gcode is rendered now
             // so we can see if in inch or mm mode
             // these items scale based on that mode
+            console.log("SETTING 1 " + this.isUnitsMm);
             this.drawToolhead();
+            console.log("SETTING 2 " + this.isUnitsMm);
             this.drawGrid();
+            console.log("SETTING 3 " + this.isUnitsMm);
             this.drawExtentsLabels();
+            console.log("SETTING 4 " + this.isUnitsMm);
             this.drawAxes();
         },
         shadowplane: null,
