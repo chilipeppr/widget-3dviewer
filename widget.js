@@ -1046,9 +1046,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // we need to publish back the units
             var units = "mm";
             if (!this.isUnitsMm) units = "inch";
-            console.log("SETTING CHANGED " + units)
+            console.log("SETTING CHANGED " + units + this.isUnitsMm);
             chilipeppr.publish("/" + this.id + "/unitsChanged", units);
             $('.com-chilipeppr-widget-3dviewer-units-indicator').text(units);
+            console.log("SETTING OUT " + units + this.isUnitsMm);
         },
         request3dObject: function() {
             console.log("request3dObject");
@@ -1215,7 +1216,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.viewExtents();
             //this.decorateExtents();
             this.drawAxesToolAndExtents();
-            console.log("SETTING FromText");
             this.onUnitsChanged();
             this.setDetails(this.object.userData.lines.length + " GCode Lines");
             this.wakeAnimate();
@@ -1746,7 +1746,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
         },
         decorate: null, // stores the decoration 3d objects
         decorateExtents: function() {
-            console.log("SETTING decorateExtents");
             // remove grid if drawn previously
             if (this.decorate != null) {
                 console.log("there was a previous extent decoration. remove it. grid:", this.decorate);
@@ -2014,11 +2013,8 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // these items scale based on that mode
             console.log("SETTING 1 " + this.isUnitsMm);
             this.drawToolhead();
-            console.log("SETTING 2 " + this.isUnitsMm);
             this.drawGrid();
-            console.log("SETTING 3 " + this.isUnitsMm);
             this.drawExtentsLabels();
-            console.log("SETTING 4 " + this.isUnitsMm);
             this.drawAxes();
         },
         shadowplane: null,
