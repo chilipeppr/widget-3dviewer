@@ -1188,7 +1188,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 that.viewExtents();
                 //that.decorateExtents();
                 that.drawAxesToolAndExtents();
-                console.log("SETTING loadFile");
                 that.onUnitsChanged();
                 localStorage.setItem('last-loaded', path);
                 localStorage.removeItem('last-imported');
