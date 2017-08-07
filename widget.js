@@ -1031,6 +1031,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 this.isUnitsMm = true;
             else
                 this.isUnitsMm = false;
+            console.log("SETTING setUnits");
             this.onUnitsChanged();
         },
         requestUnits: function() {
@@ -1189,6 +1190,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 that.viewExtents();
                 //that.decorateExtents();
                 that.drawAxesToolAndExtents();
+                console.log("SETTING loadFile");
                 that.onUnitsChanged();
                 localStorage.setItem('last-loaded', path);
                 localStorage.removeItem('last-imported');
@@ -1213,6 +1215,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.viewExtents();
             //this.decorateExtents();
             this.drawAxesToolAndExtents();
+            console.log("SETTING FromText");
             this.onUnitsChanged();
             this.setDetails(this.object.userData.lines.length + " GCode Lines");
             this.wakeAnimate();
