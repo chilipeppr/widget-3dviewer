@@ -1153,7 +1153,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             console.log("SETTING CHANGED " + units + this.isUnitsMm);
             chilipeppr.publish("/" + this.id + "/unitsChanged", units);
             $('.com-chilipeppr-widget-3dviewer-units-indicator').text(units);
-            console.log("SETTING OUT " + units + " " + this.isUnitsMm + " " + this);
+            console.log("SETTING OUT " + units + " " + this.isUnitsMm + " " + this.id);
         },
         request3dObject: function() {
             console.log("request3dObject");
