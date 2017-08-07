@@ -3746,7 +3746,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // later on when they are drawn after the gcode is rendered
                     console.log("SETTING UNITS TO INCHES!!!");
                     //isUnitsMm = false; // false means inches cuz default is mm
-                    cofg.setUnits("inch");
+                    parser.setUnits("inch");
                 },
 
                 G21: function () {
@@ -3755,7 +3755,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // Units from now on are in millimeters. (This is the RepRap default.)
                     console.log("SETTING UNITS TO MM!!!");
                     //isUnitsMm = true; // true means mm
-                    cofg.setUnits("mm");
+                    parser.setUnits("mm");
                 },
 
                 // A bunch of no-op modes that do not affect the viewer
