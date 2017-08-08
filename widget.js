@@ -1992,7 +1992,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             return textObject;
         },
         element: null,
-        isUnitsMm: true, // true for mm, false for inches
+
         getInchesFromMm: function(mm) {
             return mm * 0.0393701;
         },
@@ -2866,9 +2866,23 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     text = text.replace(/(;|\().*$/, ""); // ; or () trailing
                     //text = text.replace(/\(.*$/, ""); // () trailing
                     
-                    var tokens = text.split(/\s+/);
-                    //console.log("tokens:", tokens);
-                    if (tokens) {
+                    var tokens = [];
+                    
+                    // Execute any non-motion commands on the line immediately
+                    // Add other commands to the tokens list for later handling
+                    // Segments are not created for non-motion commands;
+                    // the segment for this line is created later
+                    
+                    text.split(/\s+/).forEach(function (token) {
+                        var modehandler = modecmdhandlers[token.toUpperCase()];
+                        if (modehandler) {
+                            modehandler();
+                        } else {
+                            tokens.push(token);
+                        }
+                    });
+
+                    if (tokens.length) {
                         var cmd = tokens[0];
                         cmd = cmd.toUpperCase();
                         // check if a g or m cmd was included in gcode line
@@ -2938,20 +2952,6 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         }
                         //console.log("calling handler: cmd:", cmd, "args:", args, "info:", info);
                         if (handler) {
-                            
-                            // do extra check here for units. units are
-                            // specified via G20 or G21. We need to scan
-                            // each line to see if it's inside the line because
-                            // we were only catching it when it was the first cmd
-                            // of the line.
-                            if (args.text.match(/\bG20\b/i)) {
-                                console.log("SETTING UNITS TO INCHES from pre-parser!!!");
-                                this.isUnitsMm = false; // false means inches cuz default is mm
-                            } else if (args.text.match(/\bG21\b/i)) {
-                                console.log("SETTING UNITS TO MM!!! from pre-parser");
-                                this.isUnitsMm = true; // true means mm
-                            }
-                            
                             // scan for feedrate
                             if (args.text.match(/F([\d.]+)/i)) {
                                 // we have a new feedrate
@@ -3558,6 +3558,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 return relative ? v1 + v2 : v2;
             }
 
+            var ijkrelative = true;  // For Mach3 Arc IJK Absolute mode
+            this.ijkabsolute = function (v1, v2) {
+                return ijkrelative ? v1 + v2 : v2;
+            }
+            
             this.addFakeSegment = function(args) {
                 //line.args = args;
                 var arg2 = {
@@ -3635,9 +3640,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         z: args.z !== undefined ? cofg.absolute(lastLine.z, args.z) + cofg.offsetG92.z : lastLine.z,
                         e: args.e !== undefined ? cofg.absolute(lastLine.e, args.e) + cofg.offsetG92.e : lastLine.e,
                         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
-                        arci: args.i ? args.i : null,
-                        arcj: args.j ? args.j : null,
-                        arck: args.k ? args.k : null,
+                        arci: args.i !== undefined ? cofg.ijkabsolute(lastLine.x, args.i) : lastLine.x,
+                        arcj: args.j !== undefined ? cofg.ijkabsolute(lastLine.y, args.j) : lastLine.y,
+                        arck: args.k !== undefined ? cofg.ijkabsolute(lastLine.z, args.k) : lastLine.z,
                         arcr: args.r ? args.r : null,
                     };
                    
@@ -3659,69 +3664,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     gcp.handlers.G2(args, indx, gcp);
                 },
 
-                G17: function (args){
-                    console.log("SETTING XY PLANE");
-                    plane = "G17";
-                    cofg.addFakeSegment(args);
-                },
-
-                G18: function (args){
-                    console.log("SETTING XZ PLANE");
-                    plane = "G18";
-                    cofg.addFakeSegment(args);
-                },
-
-                G19: function (args){
-                    console.log("SETTING YZ PLANE");
-                    plane = "G19";
-                    cofg.addFakeSegment(args);
-                },
-
-                G20: function (args) {
-                    // G21: Set Units to Inches
-                    // We don't really have to do anything since 3d viewer is unit agnostic
-                    // However, we need to set a global property so the trinket decorations
-                    // like toolhead, axes, grid, and extent labels are scaled correctly
-                    // later on when they are drawn after the gcode is rendered
-                    console.log("SETTING UNITS TO INCHES!!!");
-                    cofg.isUnitsMm = false; // false means inches cuz default is mm
-                    cofg.addFakeSegment(args);
-
-                },
-
-                G21: function (args) {
-                    // G21: Set Units to Millimeters
-                    // Example: G21
-                    // Units from now on are in millimeters. (This is the RepRap default.)
-                    console.log("SETTING UNITS TO MM!!!");
-                    cofg.isUnitsMm = true; // true means mm
-                    cofg.addFakeSegment(args);
-
-                },
-
                 G73: function(args, indx, gcp) {
                     // peck drilling. just treat as g1
                     console.log("G73 gcp:", gcp);
                     gcp.handlers.G1(args);
-                },
-                G90: function (args) {
-                    // G90: Set to Absolute Positioning
-                    // Example: G90
-                    // All coordinates from now on are absolute relative to the
-                    // origin of the machine. (This is the RepRap default.)
-
-                    relative = false;
-                    cofg.addFakeSegment(args);
-                },
-
-                G91: function (args) {
-                    // G91: Set to Relative Positioning
-                    // Example: G91
-                    // All coordinates from now on are relative to the last position.
-
-                    // TODO!
-                    relative = true;
-                    cofg.addFakeSegment(args);
                 },
 
                 G92: function (args) { // E0
@@ -3753,15 +3699,127 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 M30: function (args) {
                     cofg.addFakeSegment(args);
                 },
-                M82: function (args) {
+
+                'default': function (args, info) {
+                    //if (!args.isComment)
+                    //    console.log('Unknown command:', args.cmd, args, info);
+                    cofg.addFakeSegment(args);
+                },
+            },
+            // Mode-setting non-motion commands, of which many may appear on one line
+            // These take no arguments
+            {
+                G17: function () {
+                    console.log("SETTING XY PLANE");
+                    plane = "G17";
+                },
+
+                G18: function () {
+                    console.log("SETTING XZ PLANE");
+                    plane = "G18";
+                },
+
+                G19: function () {
+                    console.log("SETTING YZ PLANE");
+                    plane = "G19";
+                },
+
+                G20: function () {
+                    // G21: Set Units to Inches
+                    // We don't really have to do anything since 3d viewer is unit agnostic
+                    // However, we need to set a global property so the trinket decorations
+                    // like toolhead, axes, grid, and extent labels are scaled correctly
+                    // later on when they are drawn after the gcode is rendered
+                    cofg.setUnits("inch");
+                },
+
+                G21: function () {
+                    // G21: Set Units to Millimeters
+                    // Example: G21
+                    // Units from now on are in millimeters. (This is the RepRap default.)
+                    cofg.setUnits("mm");
+                },
+
+                // A bunch of no-op modes that do not affect the viewer
+                G40: function () {}, // Tool radius compensation off
+                G41: function () {}, // Tool radius compensation left
+                G42: function () {}, // Tool radius compensation right
+                G45: function () {}, // Axis offset single increase
+                G46: function () {}, // Axis offset single decrease
+                G47: function () {}, // Axis offset double increase
+                G48: function () {}, // Axis offset double decrease
+                G49: function () {}, // Tool length offset compensation cancle
+                G54: function () {}, // Select work coordinate system 1
+                G55: function () {}, // Select work coordinate system 2
+                G56: function () {}, // Select work coordinate system 3
+                G57: function () {}, // Select work coordinate system 4
+                G58: function () {}, // Select work coordinate system 5
+                G59: function () {}, // Select work coordinate system 6
+                G61: function () {}, // Exact stop check mode
+                G64: function () {}, // Cancel G61
+                G69: function () {}, // Cancel G68
+
+                G90: function () {
+                    // G90: Set to Absolute Positioning
+                    // Example: G90
+                    // All coordinates from now on are absolute relative to the
+                    // origin of the machine. (This is the RepRap default.)
+                    relative = false;
+                },
+
+                'G90.1': function () {
+                    // G90.1: Set to Arc Absolute IJK Positioning
+                    // Example: G90.1
+                    // From now on, arc centers are specified directly by
+                    // the IJK parameters, e.g. center_x = I_value
+                    // This is Mach3-specific
+                    ijkrelative = false;
+                },
+
+                G91: function () {
+                    // G91: Set to Relative Positioning
+                    // Example: G91
+                    // All coordinates from now on are relative to the last position.
+                    relative = true;
+                },
+
+                'G91.1': function () {
+                    // G91.1: Set to Arc Relative IJK Positioning
+                    // Example: G91.1
+                    // From now on, arc centers are relative to the starting
+                    // coordinate, e.g. center_x = this_x + I_value
+                    // This is the default, and the only possibility for most
+                    // controllers other than Mach3
+                    ijkrelative = true;
+                },
+
+                // No-op modal macros that do not affect the viewer
+                M07: function () {}, // Coolant on (mist)
+                M08: function () {}, // Coolant on (flood)
+                M09: function () {}, // Coolant off
+                M10: function () {}, // Pallet clamp on
+                M11: function () {}, // Pallet clamp off
+                M21: function () {}, // Mirror X axis
+                M22: function () {}, // Mirror Y axis
+                M23: function () {}, // Mirror off
+                M24: function () {}, // Thread pullout gradual off
+                M41: function () {}, // Select gear 1
+                M42: function () {}, // Select gear 2
+                M43: function () {}, // Select gear 3
+                M44: function () {}, // Select gear 4
+                M48: function () {}, // Allow feedrate override
+                M49: function () {}, // Disallow feedrate override
+                M52: function () {}, // Empty spindle
+                M60: function () {}, // Automatic pallet change
+
+                M82: function () {
                     // M82: Set E codes absolute (default)
                     // Descriped in Sprintrun source code.
 
                     // No-op, so long as M83 is not supported.
-                    cofg.addFakeSegment(args);
                 },
 
-                M84: function (args) {
+                M84: function () {
                     // M84: Stop idle hold
                     // Example: M84
                     // Stop the idle hold on all axis and extruder. In some cases the
@@ -3771,22 +3829,11 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                     // in between or after printjobs.
 
                     // No-op
-                    cofg.addFakeSegment(args);
-                },
-
-                'default': function (args, info) {
-                    //if (!args.isComment)
-                    //    console.log('Unknown command:', args.cmd, args, info);
-                    cofg.addFakeSegment(args);
                 },
             });
 
             parser.parse(gcode);
 
-            // set what units we're using in the gcode
-            //console.log('setting units from parser to 3dviewer. parser:', parser, "this:", this);
-            this.isUnitsMm = parser.isUnitsMm;
-            
             console.log("inside creatGcodeFromObject. this:", this);
 
             console.log("Layer Count ", layers.length);
