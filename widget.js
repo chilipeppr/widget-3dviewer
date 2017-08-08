@@ -2815,8 +2815,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
          * Special handler:
          *   'default': Called if no other handler matches.
          */
-        GCodeParser: function (handlers) {
+        GCodeParser: function (handlers, modecmdhandlers) {
             this.handlers = handlers || {};
+            this.modecmdhandlers = modecmdhandlers || {};
             
             this.lastArgs = {cmd: null};
             this.lastFeedrate = null;
@@ -3294,6 +3295,12 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                         var pArc_1 = undefined;
                         var pArc_2 = undefined;
                         var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
+                        
+                        // calc can be NaN if q/2 is epsilon larger than radius due to finite precision
+                        // When that happens, the calculated center is incorrect
+                        if (isNaN(calc)) {
+                            calc = 0.0;
+                        }
                         var angle_point = undefined;
                         
                         switch(args.plane){
@@ -3370,9 +3377,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                             };
                         else*/
                         var pArc = {
-                            x: p2.arci ? p1.x + p2.arci : p1.x,
-                            y: p2.arcj ? p1.y + p2.arcj : p1.y,
-                            z: p2.arck ? p1.z + p2.arck : p1.z,
+                            x: p2.arci,
+                            y: p2.arcj,
+                            z: p2.arck,
                         };
                         //console.log("new pArc:", pArc);
                         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
