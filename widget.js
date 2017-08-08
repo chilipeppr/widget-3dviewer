@@ -3021,6 +3021,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             this.extraObjects["G18"] = [];
             this.extraObjects["G19"] = [];
             this.offsetG92 = {x:0, y:0, z:0, e:0};
+            this.setUnits("mm");
 
             var lastLine = {
                 x: 0,
