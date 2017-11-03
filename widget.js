@@ -63,8 +63,9 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
     }, 3000);
     //dragdrop
     $('body').prepend('<div id="test-drag-drop"></div>');
-    chilipeppr.load("#test-drag-drop", "http://fiddle.jshell.net/chilipeppr/Z9F6G/show/light/",
-
+    chilipeppr.load("#test-drag-drop", 
+    // "http://fiddle.jshell.net/chilipeppr/Z9F6G/show/light/",
+    "http://raw.githubusercontent.com/chilipeppr/elem-dragdrop/master/auto-generated-widget.html",
     function () {
         cprequire(
         ["inline:com-chilipeppr-elem-dragdrop"],
@@ -78,7 +79,8 @@ cprequire_test(['inline:com-chilipeppr-widget-3dviewer'], function (threed) {
     // flashmsg
     $('body').prepend('<div id="com-chilipeppr-flash"></div>');
     chilipeppr.load("#com-chilipeppr-flash",
-        "http://fiddle.jshell.net/chilipeppr/90698kax/show/light/",
+        "http://raw.githubusercontent.com/chilipeppr/element-flash/master/auto-generated-widget.html",
+        // "http://fiddle.jshell.net/chilipeppr/90698kax/show/light/",
 
     function () {
         console.log("mycallback got called after loading flash msg module");
@@ -1133,7 +1135,10 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             // load the pubsub viewer / fork element which decorates our upper right pulldown
             // menu with the ability to see the pubsubs from this widget and the forking links
             var that = this;
-            chilipeppr.load("http://fiddle.jshell.net/chilipeppr/zMbL9/show/light/", function () {
+            chilipeppr.load(
+                "http://raw.githubusercontent.com/chilipeppr/widget-pubsubviewer/master/auto-generated-widget.html", 
+                // "http://fiddle.jshell.net/chilipeppr/zMbL9/show/light/", 
+                function () {
                 require(['inline:com-chilipeppr-elem-pubsubviewer'], function (pubsubviewer) {
                     pubsubviewer.attachTo($('#com-chilipeppr-widget-3dviewer-dropdown'), that);
                 });
