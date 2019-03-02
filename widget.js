@@ -2642,8 +2642,9 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
 
             mouseEvtContainer.on('mousewheel', function (event){
                 // console.log("mousewheel. event:", event);
+                // controls.noZoom = true;
                 event.preventDefault();
-                var factor = 2;
+                var factor = 10;
                 var mX = (event.clientX / mouseEvtContainer.width()) * 2 - 1;
                 var mY = -(event.clientY / mouseEvtContainer.height()) * 2 + 1;
                 var vector = new THREE.Vector3(mX, mY, 0.1);
@@ -2660,6 +2661,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
     
                 }
                 camera.updateProjectionMatrix();
+                // controls.noZoom = false;
             });
 
             return scene;
