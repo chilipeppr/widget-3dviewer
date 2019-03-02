@@ -2638,7 +2638,7 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
             
             // try to get orbit controls to zoom towards mouse rather than zoom
             // towards center
-            controls.noZoom = true;
+            // controls.noZoom = true;
 
             mouseEvtContainer.on('mousewheel', function (event){
                 // console.log("mousewheel. event:", event);
