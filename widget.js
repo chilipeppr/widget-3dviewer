@@ -2635,6 +2635,32 @@ cpdefine('inline:com-chilipeppr-widget-3dviewer', ['chilipeppr_ready', 'Three', 
                 that.wakeAnimate();
                 //render();
             });
+            
+            // try to get orbit controls to zoom towards mouse rather than zoom
+            // towards center
+            controls.noZoom = true;
+
+            mouseEvtContainer.on('mousewheel', function (event){
+                // console.log("mousewheel. event:", event);
+                event.preventDefault();
+                var factor = 10;
+                var mX = (event.clientX / mouseEvtContainer.width()) * 2 - 1;
+                var mY = -(event.clientY / mouseEvtContainer.height()) * 2 + 1;
+                var vector = new THREE.Vector3(mX, mY, 0.1);
+    
+                vector.unproject(camera);
+                vector.sub(camera.position);
+                if (event.originalEvent.deltaY < 0) {
+                    camera.position.addVectors(camera.position, vector.setLength(factor));
+                    controls.target.addVectors(controls.target, vector.setLength(factor));
+                    
+                } else {
+                    camera.position.subVectors(camera.position, vector.setLength(factor));
+                    controls.target.subVectors(controls.target, vector.setLength(factor));
+    
+                }
+                camera.updateProjectionMatrix();
+            });
 
             return scene;
         },
