@@ -18,7 +18,7 @@ requirejs.config({
         // ThreeTrackballControls: '//i2dcui.appspot.com/slingshot?url=http://threejs.org/examples/js/controls/TrackballControls.js',
         // r79 (to solve that mousewheel zoom started not working in r80, so had to force to older version. eventually they'll fix the bug cuz i filed it)
         // ThreeTrackballControls: '//i2dcui.appspot.com/slingshot?url=http://rawgit.com/mrdoob/three.js/r79/examples/js/controls/TrackballControls.js',
-        ThreeTrackballControls: '//i2dcui.appspot.com/geturl?url=http://rawgit.com/mrdoob/three.js/r79/examples/js/controls/TrackballControls.js',
+        ThreeTrackballControls: '//i2dcui.appspot.com/geturl?url=http://raw.githubusercontent.com/mrdoob/three.js/r79/examples/js/controls/TrackballControls.js',
         ThreeOrbitControls: '//threejs.org/examples/js/controls/OrbitControls',
         ThreeHelvetiker: '//i2dcui.appspot.com/js/three/threehelvetiker',
         ThreeTypeface: 'https://superi.googlecode.com/svn-history/r1953/trunk/MBrand/MBrand/Scripts/typeface-0.15',
